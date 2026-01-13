@@ -1,0 +1,136 @@
+package user
+
+import (
+	"log"
+
+	"github.com/afandimsr/cashbook-backend/internal/domain/apperror"
+	"github.com/afandimsr/cashbook-backend/internal/domain/user"
+	"github.com/afandimsr/cashbook-backend/internal/pkg/jwt"
+	"golang.org/x/crypto/bcrypt"
+)
+
+type Usecase struct {
+	repo        user.UserRepository
+	authService user.AuthService
+}
+
+func New(repo user.UserRepository, authService user.AuthService) *Usecase {
+	return &Usecase{
+		repo:        repo,
+		authService: authService,
+	}
+}
+
+func (u *Usecase) GetAll(page, limit int) ([]user.User, error) {
+	offset := (page - 1) * limit
+	return u.repo.FindAll(limit, offset)
+}
+
+func (u *Usecase) GetByID(id int64) (user.User, error) {
+	return u.repo.FindByID(id)
+}
+
+func (u *Usecase) Create(newUser user.User) error {
+	if newUser.Email == "" {
+		return apperror.BadRequest("email is required", nil)
+	}
+	if newUser.Password == "" {
+		return apperror.BadRequest("password is required", nil)
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return apperror.Internal(err)
+	}
+	newUser.Password = string(hashedPassword)
+
+	if err := u.repo.Save(newUser); err != nil {
+		return apperror.Internal(err)
+	}
+
+	return nil
+}
+
+func (u *Usecase) Update(id int64, updatedUser user.User) error {
+	if updatedUser.Email == "" {
+		return apperror.BadRequest("email is required", nil)
+	}
+
+	// Check if user exists
+	existingUser, err := u.repo.FindByID(id)
+	if err != nil {
+		return err
+	}
+
+	existingUser.Name = updatedUser.Name
+	existingUser.Email = updatedUser.Email
+
+	if updatedUser.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updatedUser.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return apperror.Internal(err)
+		}
+		existingUser.Password = string(hashedPassword)
+	}
+
+	if err := u.repo.Update(existingUser); err != nil {
+		return apperror.Internal(err)
+	}
+
+	return nil
+}
+
+func (u *Usecase) Delete(id int64) error {
+	// Check if user exists
+	if _, err := u.repo.FindByID(id); err != nil {
+		return err
+	}
+
+	if err := u.repo.Delete(id); err != nil {
+		return apperror.Internal(err)
+	}
+
+	return nil
+}
+
+func (u *Usecase) Login(email, password string) (string, error) {
+	// 1. Find user by email
+	existingUser, err := u.repo.FindByEmail(email)
+	if err != nil {
+		log.Printf("Login: user not found by email=%s err=%v", email, err)
+		return "", apperror.Unauthorized("invalid credentials [1]", nil)
+	}
+	log.Printf("Login: found user id=%d email=%s roles=%v google_id=%s", existingUser.ID, existingUser.Email, existingUser.Roles, existingUser.GoogleID)
+
+	// 2. Authenticate
+	// If AuthService is available (and configured), try it first/instead.
+	// For this implementation, if AuthService is provided, we use it to validate password.
+	// If it returns true, we consider it valid.
+	authenticated := false
+	if u.authService != nil {
+		isAuth, err := u.authService.Login(email, password)
+		if err == nil && isAuth {
+			authenticated = true
+		}
+	}
+
+	// Fallback to local bcrypt if not authenticated via external service (or if service not used)
+	// Note: The requirement implies "if login using client auth service".
+	// We can assume priority: External > Local.
+	if !authenticated {
+		if err := bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(password)); err != nil {
+			log.Printf("Login: bcrypt compare failed for user id=%d err=%v", existingUser.ID, err)
+			return "", apperror.Unauthorized("invalid credentials [2]", nil)
+		}
+		log.Printf("Login: password verified for user id=%d", existingUser.ID)
+	}
+
+	// 3. Generate Token
+	// include roles in token
+	token, err := jwt.GenerateToken(existingUser.ID, existingUser.Email, existingUser.Name, existingUser.Roles)
+	if err != nil {
+		return "", apperror.Internal(err)
+	}
+
+	return token, nil
+}
