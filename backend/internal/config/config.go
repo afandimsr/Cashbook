@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	AppName       string
-	AppPort       string
-	AppEnv        string
-	JWTSecret     string
-	ClientAuthURL string
+	AppName            string
+	AppPort            string
+	AppEnv             string
+	JWTSecret          string
+	ClientAuthURL      string
+	CorsAllowedOrigins string
 
 	GoogleClientID     string
 	GoogleClientSecret string
@@ -55,6 +56,7 @@ func Load() *Config {
 			Name:    getEnv("DB_NAME", ""),
 			SSLMode: getEnv("DB_SSLMODE", "disable"),
 		},
+		CorsAllowedOrigins: getEnv("CORS_ALLOWED_ORIGINS", "*"),
 	}
 
 	validate(cfg)

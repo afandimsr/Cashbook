@@ -32,7 +32,7 @@ func NewBudgetHandler(usecase uc.Usecase) *BudgetHandler {
 // @Failure      500 {object} response.ErrorSwaggerResponse
 // @Router       /budgets [get]
 func (h *BudgetHandler) GetBudgets(c *gin.Context) {
-	userID := c.MustGet("userID").(int64)
+	userID := c.MustGet("user_id").(int64)
 
 	now := time.Now()
 	monthStr := c.DefaultQuery("month", strconv.Itoa(int(now.Month())))
@@ -63,7 +63,7 @@ func (h *BudgetHandler) GetBudgets(c *gin.Context) {
 // @Failure      500 {object} response.ErrorSwaggerResponse
 // @Router       /budgets [post]
 func (h *BudgetHandler) SetBudget(c *gin.Context) {
-	userID := c.MustGet("userID").(int64)
+	userID := c.MustGet("user_id").(int64)
 
 	var req budget.Budget
 	if err := c.ShouldBindJSON(&req); err != nil {

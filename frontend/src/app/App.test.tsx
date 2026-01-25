@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 
 describe('App', () => {
     it('renders dashboard by default', () => {
-        render(<App />);
+        render(<App initialTitle="Login System" />);
         expect(screen.getByText(/Login System/i)).toBeInTheDocument();
     });
 });
