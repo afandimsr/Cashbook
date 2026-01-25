@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { LoginUseCase } from './LoginUseCase';
-import { AuthRepositoryImpl } from '../../infrastructure/auth/AuthRepository';
+import { AuthRepository } from '../../infrastructure/auth/AuthRepository';
 
 describe('LoginUseCase', () => {
-    const authRepo = new AuthRepositoryImpl();
+    const authRepo = new AuthRepository();
     const loginUseCase = new LoginUseCase(authRepo);
 
     it('should login successfully with valid credentials', async () => {

@@ -57,17 +57,7 @@ func Run() {
 	recurringHandler := handler.NewRecurringHandler(recurringUsecase)
 
 	r := gin.Default()
-	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{
-			"http://localhost:3000", // React
-			"http://localhost:5173", // Vite
-			"http://localhost:8181", // Swagger
-		},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		AllowCredentials: true,
-	}))
-
+	r.Use(cors.New(middleware.Cors(cfg)))
 	r.Use(middleware.ErrorHandler())
 
 	RegisterRoutes(r, userHandler, categoryHandler, transactionHandler, budgetHandler, reportHandler, recurringHandler)

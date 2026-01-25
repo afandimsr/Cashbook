@@ -1,10 +1,9 @@
-import type { UserRepository } from '../../domain/repositories/IUserRepository';
+import type { IUserRepository } from '../../domain/repositories/IUserRepository';
 import type { User } from '../../domain/entities/User';
 
 export class UpdateUserUseCase {
-    private userRepository: UserRepository;
-
-    constructor(userRepository: UserRepository) {
+    private userRepository: IUserRepository;
+    constructor(userRepository: IUserRepository) {
         this.userRepository = userRepository;
     }
 

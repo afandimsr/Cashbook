@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # --- Service Backend ---
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: go-backend
+    ports:
+      - "8181:8181"  # Mapping Port Host:Container (Host 8181 sesuai env frontend)
+    env_file:
+      - ./backend/.env
+    networks:
+      - my_develop_network
+    restart: always
+
+  # --- Service Frontend ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      # Masukkan nilai ENV ke dalam proses Build Docker
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_APP_TITLE: ${VITE_APP_TITLE}
+    container_name: react-frontend
+    ports:
+      - "3000:80"
+    # Kita load file .env frontend agar docker-compose bisa membaca valuenya
+    # untuk dimasukkan ke variabel ${VITE_...} di atas
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
+    networks:
+      - my_develop_network
+    restart: always
+
+# ... (Definisi networks sama seperti sebelumnya)
+networks:
+  my_develop_network:
+    external: true

@@ -18,7 +18,6 @@ export const useReportStore = create<ReportState>((set) => ({
         set({ isLoading: true, error: null });
         try {
             const data = await apiClient.get<CategorySpending[]>(`/reports/spending?month=${month}&year=${year}`);
-            console.log(data);
             set({ categorySpending: data || [], isLoading: false });
         } catch (error: any) {
             set({ error: error.message, isLoading: false });

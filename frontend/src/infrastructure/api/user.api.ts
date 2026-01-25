@@ -5,14 +5,14 @@ import { apiClient } from '../apiClient';
 import type { GetUserUseCaseDTO } from '../../application/user/GetUsersUseCase/GetUserUseCaseDTO';
 import type { CreateUserRequest } from '../../application/user/Create/CreateUserRequest';
 
-const MOCK_USERS: User[] = [
-    { id: '1', username: 'admin', name: 'admin', email: 'admin@example.com', role: 'ADMIN', isActive: true },
-    { id: '2', username: 'user1', name: 'user1', email: 'user1@example.com', role: 'USER', isActive: true },
-    { id: '3', username: 'karyawan', name: 'karyawan', email: 'karyawan@example.com', role: 'USER', isActive: false },
-];
+// const MOCK_USERS: User[] = [
+//     { id: '1', username: 'admin', name: 'admin', email: 'admin@example.com', role: 'ADMIN', isActive: true },
+//     { id: '2', username: 'user1', name: 'user1', email: 'user1@example.com', role: 'USER', isActive: true },
+//     { id: '3', username: 'karyawan', name: 'karyawan', email: 'karyawan@example.com', role: 'USER', isActive: false },
+// ];
 
 export class UserRepositoryImpl implements IUserRepository {
-    private users: User[] = [...MOCK_USERS];
+    // private users: User[] = [...MOCK_USERS];
 
     async getUsers(): Promise<GetUserUseCaseDTO[]> {
         // await new Promise((resolve) => setTimeout(resolve, 500));
