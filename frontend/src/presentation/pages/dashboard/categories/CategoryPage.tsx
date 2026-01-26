@@ -19,19 +19,38 @@ export const CategoryPage: React.FC = () => {
         categories,
         isLoading,
         handleAddCategory,
+        handleUpdateCategory,
         handleDeleteCategory
     } = useCategories();
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [snack, setSnack] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+
+    const handleAddClick = () => {
+        setEditingCategory(null);
+        setIsDialogOpen(true);
+    };
+
+    const handleEditClick = (category: Category) => {
+        setEditingCategory(category);
+        setIsDialogOpen(true);
+    };
 
     const handleSaveCategory = async (data: Omit<Category, 'id'>) => {
         try {
-            await handleAddCategory(data);
-            setSnack({ open: true, message: 'Category created', severity: 'success' });
+            if (editingCategory?.id) {
+                await handleUpdateCategory(editingCategory.id, data);
+                setSnack({ open: true, message: 'Category updated', severity: 'success' });
+            } else {
+                await handleAddCategory(data);
+                setSnack({ open: true, message: 'Category created', severity: 'success' });
+            }
             setIsDialogOpen(false);
+            setEditingCategory(null);
         } catch (err: any) {
-            setSnack({ open: true, message: err?.message || 'Failed to create category', severity: 'error' });
+            const action = editingCategory ? 'update' : 'create';
+            setSnack({ open: true, message: err?.message || `Failed to ${action} category`, severity: 'error' });
             throw err;
         }
     };
@@ -57,7 +76,7 @@ export const CategoryPage: React.FC = () => {
                 <Button
                     variant="contained"
                     startIcon={<AddIcon />}
-                    onClick={() => setIsDialogOpen(true)}
+                    onClick={handleAddClick}
                     sx={{ borderRadius: 2 }}
                 >
                     Add Category
@@ -71,16 +90,21 @@ export const CategoryPage: React.FC = () => {
             ) : (
                 <CategoryList
                     categories={categories ?? []}
+                    onEdit={handleEditClick}
                     onDelete={handleDelete}
                     isLoading={isLoading}
                 />
             )}
 
-                <CategoryDialog
-                    open={isDialogOpen}
-                    onClose={() => setIsDialogOpen(false)}
-                    onSave={handleSaveCategory}
-                />
+            <CategoryDialog
+                open={isDialogOpen}
+                onClose={() => {
+                    setIsDialogOpen(false);
+                    setEditingCategory(null);
+                }}
+                onSave={handleSaveCategory}
+                initialData={editingCategory}
+            />
 
             <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack({ ...snack, open: false })}>
                 <Alert onClose={() => setSnack({ ...snack, open: false })} severity={snack.severity} sx={{ width: '100%' }}>

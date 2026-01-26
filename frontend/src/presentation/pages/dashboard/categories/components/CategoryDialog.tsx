@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Button,
     Dialog,
@@ -15,26 +15,49 @@ interface CategoryDialogProps {
     open: boolean;
     onClose: () => void;
     onSave: (data: Omit<Category, 'id'>) => Promise<void>;
+    initialData?: Category | null;
 }
 
-export const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onClose, onSave }) => {
-    const [formData, setFormData] = useState<Omit<Category, 'id'>>({
+export const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onClose, onSave, initialData }) => {
+    const [formData, setFormData] = useState<Omit<Category, 'id' | 'user_id'>>({
         name: '',
         type: 'expense',
         color: '#3498db',
         icon: 'category'
     });
 
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                name: initialData.name,
+                type: initialData.type,
+                color: initialData.color,
+                icon: initialData.icon
+            });
+        } else {
+            setFormData({
+                name: '',
+                type: 'expense',
+                color: '#3498db',
+                icon: 'category'
+            });
+        }
+    }, [initialData, open]);
+
     const handleSubmit = async () => {
         if (!formData.name) return;
         await onSave(formData);
-        setFormData({ name: '', type: 'expense', color: '#3498db', icon: 'category' });
+        if (!initialData) {
+            setFormData({ name: '', type: 'expense', color: '#3498db', icon: 'category' });
+        }
         onClose();
     };
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-            <DialogTitle sx={{ fontWeight: 800 }}>New Category</DialogTitle>
+            <DialogTitle sx={{ fontWeight: 800 }}>
+                {initialData ? 'Edit Category' : 'New Category'}
+            </DialogTitle>
             <DialogContent>
                 <Stack spacing={3} sx={{ pt: 1 }}>
                     <TextField
@@ -55,6 +78,14 @@ export const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onClose, o
                         <MenuItem value="income">Income</MenuItem>
                     </TextField>
                     <TextField
+                        label="Icon"
+                        fullWidth
+                        value={formData.icon}
+                        onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
+                        placeholder="e.g. shopping_cart, account_balance"
+                        helperText="Material Icon name"
+                    />
+                    <TextField
                         label="Color"
                         type="color"
                         fullWidth
@@ -67,7 +98,7 @@ export const CategoryDialog: React.FC<CategoryDialogProps> = ({ open, onClose, o
             <DialogActions sx={{ p: 3 }}>
                 <Button onClick={onClose} color="inherit">Cancel</Button>
                 <Button variant="contained" onClick={handleSubmit} disabled={!formData.name}>
-                    Create Category
+                    {initialData ? 'Update Category' : 'Create Category'}
                 </Button>
             </DialogActions>
         </Dialog>

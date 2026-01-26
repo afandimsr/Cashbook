@@ -13,16 +13,17 @@ import {
     Box,
     Chip
 } from '@mui/material';
-import { Delete as DeleteIcon } from '@mui/icons-material';
+import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
 import type { Category } from '../../../../../domain/entities/Category';
 
 interface CategoryListProps {
     categories?: Category[];
+    onEdit: (category: Category) => void;
     onDelete: (id: number) => void;
     isLoading: boolean;
 }
 
-export const CategoryList: React.FC<CategoryListProps> = ({ categories, onDelete, isLoading }) => {
+export const CategoryList: React.FC<CategoryListProps> = ({ categories, onEdit, onDelete, isLoading }) => {
     const items = categories ?? [];
 
     return (
@@ -55,15 +56,23 @@ export const CategoryList: React.FC<CategoryListProps> = ({ categories, onDelete
                                 </Stack>
                             </TableCell>
                             <TableCell align="center">
-                                <IconButton
-                                    color="error"
-                                    onClick={() => {
-                                        if (cat.id !== undefined && cat.id !== null) onDelete(cat.id);
-                                    }}
-                                    disabled={cat.id === undefined || cat.id === null}
-                                >
-                                    <DeleteIcon />
-                                </IconButton>
+                                <Stack direction="row" spacing={1} justifyContent="center">
+                                    <IconButton
+                                        color="primary"
+                                        onClick={() => onEdit(cat)}
+                                    >
+                                        <EditIcon />
+                                    </IconButton>
+                                    <IconButton
+                                        color="error"
+                                        onClick={() => {
+                                            if (cat.id !== undefined && cat.id !== null) onDelete(cat.id);
+                                        }}
+                                        disabled={cat.id === undefined || cat.id === null}
+                                    >
+                                        <DeleteIcon />
+                                    </IconButton>
+                                </Stack>
                             </TableCell>
                         </TableRow>
                     ))}

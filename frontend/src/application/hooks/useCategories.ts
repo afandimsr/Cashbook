@@ -8,6 +8,7 @@ export const useCategories = () => {
         error,
         fetchCategories,
         addCategory,
+        updateCategory,
         deleteCategory
     } = useCategoryStore();
 
@@ -31,6 +32,7 @@ export const useCategories = () => {
         getCategoriesByType,
         refreshCategories: fetchCategories,
         handleAddCategory: addCategory,
+        handleUpdateCategory: updateCategory,
         handleDeleteCategory: deleteCategory
     };
 };
