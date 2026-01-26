@@ -22,6 +22,10 @@ import { RecurringPage } from '../presentation/pages/dashboard/recurring/Recurri
 
 export const AppRoutes: React.FC = () => {
     const element = useRoutes([
+         {
+            path: '/',
+            element: <Navigate to="/dashboard" replace />
+        },
         {
             element: <GuestRoute />, // Prevent authenticated users from login
             children: [
