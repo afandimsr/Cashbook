@@ -25,7 +25,7 @@ func New(txRepo transaction.Repository) Usecase {
 
 func (u *usecase) GetCategorySpending(userID int64, month, year int) ([]CategoryReport, error) {
 	// For simplicity, aggregate in memory. Optimized with DB queries in production.
-	txs, err := u.txRepo.GetCategorySpending(userID, 1000, 0, "")
+	txs, err := u.txRepo.GetCategorySpending(userID, 1000, 0, transaction.Filter{})
 	if err != nil {
 		return nil, err
 	}

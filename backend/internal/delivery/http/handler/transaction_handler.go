@@ -38,9 +38,30 @@ func (h *TransactionHandler) GetTransactions(c *gin.Context) {
 	userID := c.MustGet("user_id").(int64)
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	search := c.Query("q")
 
-	txs, err := h.usecase.GetAllByUserID(userID, page, limit, search)
+	filter := transaction.Filter{
+		Search: c.Query("q"),
+		Type:   c.Query("type"),
+	}
+
+	if catID := c.Query("category_id"); catID != "" {
+		id, _ := strconv.ParseInt(catID, 10, 64)
+		filter.CategoryID = id
+	}
+
+	if sd := c.Query("start_date"); sd != "" {
+		if t, err := time.Parse("2006-01-02", sd); err == nil {
+			filter.StartDate = t
+		}
+	}
+
+	if ed := c.Query("end_date"); ed != "" {
+		if t, err := time.Parse("2006-01-02", ed); err == nil {
+			filter.EndDate = t
+		}
+	}
+
+	txs, err := h.usecase.GetAllByUserID(userID, page, limit, filter)
 	if err != nil {
 		c.Error(err)
 		return

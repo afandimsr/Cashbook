@@ -15,15 +15,39 @@ func NewTransactionRepo(db *sql.DB) transaction.Repository {
 	return &transactionRepo{db: db}
 }
 
-func (r *transactionRepo) FindAllByUserID(userID int64, limit, offset int, search string) ([]transaction.Transaction, error) {
+func (r *transactionRepo) FindAllByUserID(userID int64, limit, offset int, filter transaction.Filter) ([]transaction.Transaction, error) {
 	query := "SELECT id, user_id, category_id, amount, note, date, type FROM transactions WHERE user_id = $1"
 	args := []interface{}{userID}
 	placeholderCount := 1
 
-	if search != "" {
+	if filter.Search != "" {
 		placeholderCount++
 		query += " AND note ILIKE $" + strconv.Itoa(placeholderCount)
-		args = append(args, "%"+search+"%")
+		args = append(args, "%"+filter.Search+"%")
+	}
+
+	if filter.CategoryID != 0 {
+		placeholderCount++
+		query += " AND category_id = $" + strconv.Itoa(placeholderCount)
+		args = append(args, filter.CategoryID)
+	}
+
+	if filter.Type != "" {
+		placeholderCount++
+		query += " AND type = $" + strconv.Itoa(placeholderCount)
+		args = append(args, filter.Type)
+	}
+
+	if !filter.StartDate.IsZero() {
+		placeholderCount++
+		query += " AND date >= $" + strconv.Itoa(placeholderCount)
+		args = append(args, filter.StartDate)
+	}
+
+	if !filter.EndDate.IsZero() {
+		placeholderCount++
+		query += " AND date <= $" + strconv.Itoa(placeholderCount)
+		args = append(args, filter.EndDate)
 	}
 
 	query += " ORDER BY date DESC LIMIT $" + strconv.Itoa(placeholderCount+1) + " OFFSET $" + strconv.Itoa(placeholderCount+2)
@@ -47,15 +71,39 @@ func (r *transactionRepo) FindAllByUserID(userID int64, limit, offset int, searc
 	return transactions, nil
 }
 
-func (r *transactionRepo) GetCategorySpending(userID int64, limit, offset int, search string) ([]transaction.ReportTransaction, error) {
+func (r *transactionRepo) GetCategorySpending(userID int64, limit, offset int, filter transaction.Filter) ([]transaction.ReportTransaction, error) {
 	query := "SELECT t.id, t.user_id, t.category_id, c.name as category_name, c.color as color, t.amount, t.note, t.date, t.type FROM transactions as t INNER JOIN categories c ON t.category_id = c.id WHERE t.user_id = $1"
 	args := []interface{}{userID}
 	placeholderCount := 1
 
-	if search != "" {
+	if filter.Search != "" {
 		placeholderCount++
 		query += " AND note ILIKE $" + strconv.Itoa(placeholderCount)
-		args = append(args, "%"+search+"%")
+		args = append(args, "%"+filter.Search+"%")
+	}
+
+	if filter.CategoryID != 0 {
+		placeholderCount++
+		query += " AND t.category_id = $" + strconv.Itoa(placeholderCount)
+		args = append(args, filter.CategoryID)
+	}
+
+	if filter.Type != "" {
+		placeholderCount++
+		query += " AND t.type = $" + strconv.Itoa(placeholderCount)
+		args = append(args, filter.Type)
+	}
+
+	if !filter.StartDate.IsZero() {
+		placeholderCount++
+		query += " AND t.date >= $" + strconv.Itoa(placeholderCount)
+		args = append(args, filter.StartDate)
+	}
+
+	if !filter.EndDate.IsZero() {
+		placeholderCount++
+		query += " AND t.date <= $" + strconv.Itoa(placeholderCount)
+		args = append(args, filter.EndDate)
 	}
 
 	query += " ORDER BY date DESC LIMIT $" + strconv.Itoa(placeholderCount+1) + " OFFSET $" + strconv.Itoa(placeholderCount+2)

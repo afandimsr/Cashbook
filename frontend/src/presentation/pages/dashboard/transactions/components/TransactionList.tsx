@@ -34,7 +34,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
                     <TableRow>
                         <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Category</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Note</TableCell>
+                        <TableCell sx={{ fontWeight: 700, display: { xs: 'none', md: 'table-cell' } }}>Note</TableCell>
                         <TableCell sx={{ fontWeight: 700 }} align="right">Amount</TableCell>
                         <TableCell sx={{ fontWeight: 700 }} align="center">Actions</TableCell>
                     </TableRow>
@@ -58,7 +58,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
                                         <Typography variant="body2">{category?.name || 'Unknown'}</Typography>
                                     </Stack>
                                 </TableCell>
-                                <TableCell>{tx.note || '—'}</TableCell>
+                                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{tx.note || '—'}</TableCell>
                                 <TableCell align="right">
                                     <Typography
                                         variant="body2"
