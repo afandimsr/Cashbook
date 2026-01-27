@@ -24,6 +24,14 @@ type ReportTransaction struct {
 	Type         string    `json:"type"` // "income" or "expense"
 }
 
+type Filter struct {
+	CategoryID int64     `json:"category_id"`
+	Type       string    `json:"type"`
+	StartDate  time.Time `json:"start_date"`
+	EndDate    time.Time `json:"end_date"`
+	Search     string    `json:"search"`
+}
+
 type DashboardSummary struct {
 	TotalIncome  float64 `json:"total_income"`
 	TotalExpense float64 `json:"total_expense"`
@@ -31,8 +39,8 @@ type DashboardSummary struct {
 }
 
 type Repository interface {
-	FindAllByUserID(userID int64, limit, offset int, search string) ([]Transaction, error)
-	GetCategorySpending(userID int64, limit, offset int, search string) ([]ReportTransaction, error)
+	FindAllByUserID(userID int64, limit, offset int, filter Filter) ([]Transaction, error)
+	GetCategorySpending(userID int64, limit, offset int, filter Filter) ([]ReportTransaction, error)
 	FindByID(id int64) (Transaction, error)
 	Save(transaction *Transaction) error
 	Update(transaction *Transaction) error

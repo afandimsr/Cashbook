@@ -2,12 +2,20 @@ import { create } from 'zustand';
 import type { Transaction, DashboardSummary } from '../domain/entities/Transaction';
 import { apiClient } from '../infrastructure/apiClient';
 
+export interface TransactionFilter {
+    q?: string;
+    category_id?: number | string;
+    type?: string;
+    start_date?: string;
+    end_date?: string;
+}
+
 interface TransactionState {
     transactions: Transaction[];
     summary: DashboardSummary | null;
     isLoading: boolean;
     error: string | null;
-    fetchTransactions: (page?: number, limit?: number, search?: string) => Promise<void>;
+    fetchTransactions: (page?: number, limit?: number, filters?: TransactionFilter) => Promise<void>;
     fetchSummary: () => Promise<void>;
     addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
     updateTransaction: (id: number, transaction: Partial<Transaction>) => Promise<void>;
@@ -20,10 +28,17 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
     isLoading: false,
     error: null,
 
-    fetchTransactions: async (page = 1, limit = 20, search = '') => {
+    fetchTransactions: async (page = 1, limit = 20, filters = {}) => {
         set({ isLoading: true, error: null });
         try {
-            const data = await apiClient.get<Transaction[]>(`/transactions?page=${page}&limit=${limit}&q=${search}`);
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: limit.toString(),
+                ...Object.fromEntries(
+                    Object.entries(filters).filter(([_, v]) => v !== undefined && v !== '')
+                )
+            });
+            const data = await apiClient.get<Transaction[]>(`/transactions?${params.toString()}`);
             set({ transactions: data, isLoading: false });
         } catch (error: any) {
             set({ error: error.message, isLoading: false });

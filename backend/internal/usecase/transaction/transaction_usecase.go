@@ -7,7 +7,7 @@ import (
 )
 
 type Usecase interface {
-	GetAllByUserID(userID int64, page, limit int, search string) ([]transaction.Transaction, error)
+	GetAllByUserID(userID int64, page, limit int, filter transaction.Filter) ([]transaction.Transaction, error)
 	GetByID(id int64) (transaction.Transaction, error)
 	Create(t transaction.Transaction) error
 	Update(id int64, t transaction.Transaction) error
@@ -25,9 +25,9 @@ func New(repo transaction.Repository) Usecase {
 	}
 }
 
-func (u *usecase) GetAllByUserID(userID int64, page, limit int, search string) ([]transaction.Transaction, error) {
+func (u *usecase) GetAllByUserID(userID int64, page, limit int, filter transaction.Filter) ([]transaction.Transaction, error) {
 	offset := (page - 1) * limit
-	return u.repo.FindAllByUserID(userID, limit, offset, search)
+	return u.repo.FindAllByUserID(userID, limit, offset, filter)
 }
 
 func (u *usecase) GetByID(id int64) (transaction.Transaction, error) {
@@ -63,7 +63,7 @@ func (u *usecase) Delete(id int64) error {
 func (u *usecase) GetDashboardSummary(userID int64) (transaction.DashboardSummary, error) {
 	// For simplicity, fetch all (or a large range) and calculate
 	// In production, this should be a DB aggregation query
-	txs, err := u.repo.FindAllByUserID(userID, 1000, 0, "")
+	txs, err := u.repo.FindAllByUserID(userID, 1000, 0, transaction.Filter{})
 	if err != nil {
 		return transaction.DashboardSummary{}, err
 	}

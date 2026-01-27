@@ -8,6 +8,7 @@ import (
 )
 
 type Config struct {
+	AppVersion         string
 	AppName            string
 	AppPort            string
 	AppEnv             string
@@ -37,6 +38,7 @@ func Load() *Config {
 	_ = godotenv.Load()
 
 	cfg := &Config{
+		AppVersion:    "1.3.0",
 		AppName:       getEnv("APP_NAME", "go-app"),
 		AppPort:       getEnv("APP_PORT", "8080"),
 		AppEnv:        getEnv("APP_ENV", "production"),
