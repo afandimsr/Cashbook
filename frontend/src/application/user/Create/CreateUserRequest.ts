@@ -3,6 +3,6 @@ export interface CreateUserRequest {
     name: string;
     email: string;
     password: string;
-    role: 'ADMIN' | 'USER' | null;
+    roles: string[];
     isActive: boolean;
 }

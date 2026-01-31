@@ -56,6 +56,7 @@ func (u *oauthUsecase) HandleGoogleCallback(code string) (string, error) {
 				Name:     googleUser.Name,
 				Email:    googleUser.Email,
 				GoogleID: googleUser.ID,
+				IsActive: true,
 			}
 			err = u.userRepo.Save(newUser)
 			if err != nil {
@@ -65,6 +66,8 @@ func (u *oauthUsecase) HandleGoogleCallback(code string) (string, error) {
 		} else {
 			// Update existing user with Google ID
 			existingUser.GoogleID = googleUser.ID
+			existingUser.IsActive = true
+
 			err = u.userRepo.Update(existingUser)
 			if err != nil {
 				return "", fmt.Errorf("failed to update user with google id: %w", err)

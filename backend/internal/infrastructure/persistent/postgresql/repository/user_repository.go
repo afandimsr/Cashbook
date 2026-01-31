@@ -79,7 +79,7 @@ func (r *userRepo) Save(u user.User) error {
 		return err
 	}
 	var userID int64
-	err = tx.QueryRow("INSERT INTO users(name, email, password, is_active) VALUES($1, $2, $3, $4) RETURNING id", u.Name, u.Email, u.Password, u.IsActive).Scan(&userID)
+	err = tx.QueryRow("INSERT INTO users(name, email, password, google_id, is_active) VALUES($1, $2, $3, $4, $5) RETURNING id", u.Name, u.Email, u.Password, u.GoogleID, u.IsActive).Scan(&userID)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -106,7 +106,7 @@ func (r *userRepo) Update(u user.User) error {
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec("UPDATE users SET name = $1, email = $2, password = $3, is_active = $4 WHERE id = $5", u.Name, u.Email, u.Password, u.IsActive, u.ID)
+	_, err = tx.Exec("UPDATE users SET name = $1, email = $2, password = $3, google_id = $4, is_active = $5 WHERE id = $6", u.Name, u.Email, u.Password, u.GoogleID, u.IsActive, u.ID)
 	if err != nil {
 		tx.Rollback()
 		return err
