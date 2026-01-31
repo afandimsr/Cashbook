@@ -34,7 +34,7 @@ export const UserFormDialog: React.FC<UserFormDialogProps> = ({
         name: '',
         email: '',
         password: '',
-        role: 'USER' as 'ADMIN' | 'USER' | null,
+        roles: ['USER'] as string[],
         isActive: true,
     });
 
@@ -44,7 +44,7 @@ export const UserFormDialog: React.FC<UserFormDialogProps> = ({
                 name: user.name ?? '',
                 email: user.email,
                 password: '', // do not prefill password
-                role: user.role,
+                roles: user?.roles ?? [],
                 isActive: user.isActive,
             });
         } else {
@@ -52,7 +52,7 @@ export const UserFormDialog: React.FC<UserFormDialogProps> = ({
                 name: '',
                 email: '',
                 password: '',
-                role: 'USER',
+                roles: [],
                 isActive: true,
             });
         }
@@ -68,7 +68,7 @@ export const UserFormDialog: React.FC<UserFormDialogProps> = ({
             const update: Partial<User> = {
                 name: formData.name,
                 email: formData.email,
-                role: formData.role as 'ADMIN' | 'USER' | null,
+                roles: formData.roles,
                 isActive: formData.isActive,
             };
             // include password only if provided
@@ -83,7 +83,7 @@ export const UserFormDialog: React.FC<UserFormDialogProps> = ({
                 name: formData.name,
                 email: formData.email,
                 password: formData.password,
-                role: formData.role as 'ADMIN' | 'USER' | null,
+                roles: formData.roles,
                 isActive: formData.isActive,
             };
             onSave(createPayload);
@@ -125,28 +125,39 @@ export const UserFormDialog: React.FC<UserFormDialogProps> = ({
                     )}
                     {currentUser?.role === 'ADMIN' && (
                         <FormControl fullWidth margin="normal">
-                        <InputLabel>Role</InputLabel>
-                        <Select
-                            value={formData.role}
-                            label="Role"
-                            onChange={(e) => setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'USER' })}
-                        >
-                            <MenuItem value="ADMIN">Admin</MenuItem>
-                            <MenuItem value="USER">User</MenuItem>
-                        </Select>
+                            <InputLabel>Role</InputLabel>
+                            <Select
+                                value={formData.roles}
+                                label="Role"
+                                onChange={(e) => {
+                                    const value = e.target.value as "" | "ADMIN" | "USER";
+
+                                    setFormData({
+                                        ...formData,
+                                        roles: value ? [value] : [],
+                                    });
+                                }
+                                }
+                            >
+                                <MenuItem value="">
+                                    <em>Select role</em>
+                                </MenuItem>
+                                <MenuItem value="ADMIN">Admin</MenuItem>
+                                <MenuItem value="USER">User</MenuItem>
+                            </Select>
                         </FormControl>
                     )}
                     {currentUser?.role === 'ADMIN' && (
                         <FormControlLabel
-                        control={
-                            <Switch
-                                checked={formData.isActive}
-                                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                            />
-                        }
-                        label="Active Status"
-                        sx={{ mt: 2 }}
-                    />
+                            control={
+                                <Switch
+                                    checked={formData.isActive}
+                                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                                />
+                            }
+                            label="Active Status"
+                            sx={{ mt: 2 }}
+                        />
                     )}
                 </DialogContent>
                 <DialogActions>

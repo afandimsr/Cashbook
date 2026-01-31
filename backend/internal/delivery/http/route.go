@@ -38,7 +38,7 @@ func RegisterRoutes(
 
 	// category routes
 	categories := api.Group("/categories")
-	categories.Use(middleware.AuthMiddleware())
+	categories.Use(middleware.AuthMiddleware(), middleware.RoleGuard("ADMIN", "USER"))
 	{
 		categories.GET("", categoryHandler.GetCategories)
 		categories.POST("", categoryHandler.CreateCategory)
@@ -48,7 +48,7 @@ func RegisterRoutes(
 
 	// transaction routes
 	transactions := api.Group("/transactions")
-	transactions.Use(middleware.AuthMiddleware())
+	transactions.Use(middleware.AuthMiddleware(), middleware.RoleGuard("ADMIN", "USER"))
 	{
 		transactions.GET("", transactionHandler.GetTransactions)
 		transactions.POST("", transactionHandler.CreateTransaction)
@@ -59,7 +59,7 @@ func RegisterRoutes(
 
 	// budget routes
 	budgets := api.Group("/budgets")
-	budgets.Use(middleware.AuthMiddleware())
+	budgets.Use(middleware.AuthMiddleware(), middleware.RoleGuard("ADMIN", "USER"))
 	{
 		budgets.GET("", budgetHandler.GetBudgets)
 		budgets.POST("", budgetHandler.SetBudget)
@@ -67,14 +67,14 @@ func RegisterRoutes(
 
 	// report routes
 	reports := api.Group("/reports")
-	reports.Use(middleware.AuthMiddleware())
+	reports.Use(middleware.AuthMiddleware(), middleware.RoleGuard("ADMIN", "USER"))
 	{
 		reports.GET("/spending", reportHandler.GetCategorySpending)
 	}
 
 	// recurring routes
 	recurring := api.Group("/recurring")
-	recurring.Use(middleware.AuthMiddleware())
+	recurring.Use(middleware.AuthMiddleware(), middleware.RoleGuard("ADMIN", "USER"))
 	{
 		recurring.GET("", recurringHandler.GetRecurring)
 		recurring.POST("", recurringHandler.CreateRecurring)

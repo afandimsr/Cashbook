@@ -37,9 +37,6 @@ func AuthMiddleware() gin.HandlerFunc {
 		if len(claims.Roles) > 0 {
 			c.Set("roles", claims.Roles)
 			c.Set("role", claims.Roles[0])
-		} else {
-			c.Set("roles", []string{"USER"})
-			c.Set("role", "USER")
 		}
 		c.Next()
 	}

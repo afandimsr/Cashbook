@@ -4,6 +4,7 @@ import { apiClient } from '../apiClient';
 
 import type { GetUserUseCaseDTO } from '../../application/user/GetUsersUseCase/GetUserUseCaseDTO';
 import type { CreateUserRequest } from '../../application/user/Create/CreateUserRequest';
+import { toUserApi } from './mappers/user.mapper';
 
 // const MOCK_USERS: User[] = [
 //     { id: '1', username: 'admin', name: 'admin', email: 'admin@example.com', role: 'ADMIN', isActive: true },
@@ -33,8 +34,10 @@ export class UserRepositoryImpl implements IUserRepository {
     async updateUser(id: string, userData: Partial<User>): Promise<User> {
         await new Promise((resolve) => setTimeout(resolve, 500));
 
-         try {
-            const created = await apiClient.put<User>('/users/' + id, userData);
+        const payload = toUserApi(userData);
+
+        try {
+            const created = await apiClient.put<User>('/users/' + id, payload);
             return created;
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : String(error);

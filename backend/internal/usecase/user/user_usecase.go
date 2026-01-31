@@ -64,6 +64,8 @@ func (u *Usecase) Update(id int64, updatedUser user.User) error {
 
 	existingUser.Name = updatedUser.Name
 	existingUser.Email = updatedUser.Email
+	existingUser.IsActive = updatedUser.IsActive
+	existingUser.Roles = updatedUser.Roles
 
 	if updatedUser.Password != "" {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updatedUser.Password), bcrypt.DefaultCost)
@@ -101,6 +103,10 @@ func (u *Usecase) Login(email, password string) (string, error) {
 		return "", apperror.Unauthorized("invalid credentials [1]", nil)
 	}
 	log.Printf("Login: found user id=%d email=%s roles=%v google_id=%s", existingUser.ID, existingUser.Email, existingUser.Roles, existingUser.GoogleID)
+
+	if !existingUser.IsActive {
+		return "", apperror.Unauthorized("invalid credentials [2]", nil)
+	}
 
 	// 2. Authenticate
 	// If AuthService is available (and configured), try it first/instead.
