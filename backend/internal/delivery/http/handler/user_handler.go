@@ -203,22 +203,37 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 // GoogleLogin redirects to Google Auth URL
 func (h *UserHandler) GoogleLogin(c *gin.Context) {
-	state := "random-state" // In production, use a secure random state and verify it in callback
-	url := h.oauthUsecase.GetGoogleAuthURL(state)
+	ip := c.ClientIP()
+	userAgent := c.Request.UserAgent()
+
+	url, err := h.oauthUsecase.GetGoogleAuthURL(ip, userAgent)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "OAUTH_INIT_ERROR", "failed to initialize oauth", err.Error())
+		return
+	}
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
 // GoogleCallback handles the callback from Google
 func (h *UserHandler) GoogleCallback(c *gin.Context) {
 	code := c.Query("code")
-	if code == "" {
-		response.Error(c, http.StatusBadRequest, "OAUTH_CODE_MISSING", "code is missing", "")
+	state := c.Query("state")
+	if code == "" || state == "" {
+		response.Error(c, http.StatusBadRequest, "OAUTH_INVALID_REQUEST", "code or state is missing", "")
 		return
 	}
 
-	token, err := h.oauthUsecase.HandleGoogleCallback(code)
+	ip := c.ClientIP()
+	userAgent := c.Request.UserAgent()
+
+	token, err := h.oauthUsecase.HandleGoogleCallback(code, state, ip, userAgent)
 	if err != nil {
 		c.Error(err)
+		// Redirect to frontend error page or return JSON error?
+		// Usually callback endpoint redirects to frontend.
+		// If error, redirect to login with error param.
+		frontendErrorURL := "http://localhost:5173/login?error=" + err.Error()
+		c.Redirect(http.StatusTemporaryRedirect, frontendErrorURL)
 		return
 	}
 

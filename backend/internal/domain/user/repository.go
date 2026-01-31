@@ -13,3 +13,9 @@ type UserRepository interface {
 type AuthService interface {
 	Login(email, password string) (bool, error)
 }
+
+type OauthStateRepository interface {
+	Save(state OauthState) error
+	FindByState(state string) (*OauthState, error)
+	Update(state OauthState) error
+}

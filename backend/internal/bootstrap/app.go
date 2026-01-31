@@ -36,13 +36,14 @@ func Run() {
 	googleAuth := auth.NewGoogleAuth(cfg)
 
 	userRepository := repo.NewUserRepo(db)
+	oauthStateRepository := repo.NewOauthStateRepo(db)
 	categoryRepository := repo.NewCategoryRepo(db)
 	transactionRepository := repo.NewTransactionRepo(db)
 	budgetRepository := repo.NewBudgetRepo(db)
 	recurringRepository := repo.NewRecurringRepo(db)
 
 	userUsecase := userUC.New(userRepository, authClient)
-	oauthUsecase := userUC.NewOAuthUsecase(userRepository, googleAuth)
+	oauthUsecase := userUC.NewOAuthUsecase(userRepository, oauthStateRepository, googleAuth)
 	categoryUsecase := categoryUC.New(categoryRepository)
 	transactionUsecase := transactionUC.New(transactionRepository)
 	budgetUsecase := budgetUC.New(budgetRepository)
