@@ -13,7 +13,6 @@ import {
     Collapse,
 } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
@@ -65,16 +64,16 @@ const SidebarItem: React.FC<{
                         borderRadius: 3,
                         mb: 0.5,
                         transition: 'all 0.2s ease-in-out',
-                        bgcolor: active ? (theme) => alpha(theme.palette.primary.main, 0.08) : 'transparent',
-                        color: active ? 'primary.main' : 'text.secondary',
+                        bgcolor: active ? (theme) => alpha(theme.palette.primary.main, 0.12) : 'transparent',
+                        color: active ? 'primary.main' : 'rgba(255, 255, 255, 0.7)',
                         '&:hover': {
                             bgcolor: active
-                                ? (theme) => alpha(theme.palette.primary.main, 0.12)
-                                : (theme) => alpha(theme.palette.text.primary, 0.04),
+                                ? (theme) => alpha(theme.palette.primary.main, 0.18)
+                                : 'rgba(255, 255, 255, 0.05)',
                             transform: sidebarOpen ? 'translateX(4px)' : 'none',
                         },
                         '& .MuiListItemIcon-root': {
-                            color: active ? 'primary.main' : 'text.secondary',
+                            color: active ? 'primary.main' : 'rgba(255, 255, 255, 0.7)',
                         }
                     }}
                 >
@@ -154,18 +153,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, sidebarOpen, onClo
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'white',
+                        color: '#022c22', // Match deeper emerald
                         boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
                         flexShrink: 0
                     }}>
-                        <AdminPanelSettingsIcon />
+                        <span className="material-symbols-outlined" style={{ fontSize: 24, fontWeight: 'bold' }}>account_balance_wallet</span>
                     </Box>
                     {sidebarOpen && (
                         <Typography variant="h6" sx={{
                             fontWeight: 800,
-                            fontSize: '1.1rem',
+                            fontSize: '1.25rem',
                             letterSpacing: '-0.02em',
-                            color: 'text.primary',
+                            color: '#fff',
                             whiteSpace: 'nowrap'
                         }}>
                             CashBook
@@ -206,9 +205,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, sidebarOpen, onClo
                         justifyContent: sidebarOpen ? 'initial' : 'center',
                         px: 2.5,
                         borderRadius: 3,
-                        color: 'error.main',
+                        color: 'rgba(255, 255, 255, 0.5)',
                         '&:hover': {
                             bgcolor: (theme) => alpha(theme.palette.error.main, 0.08),
+                            color: 'error.main',
                         },
                     }}
                 >
@@ -252,9 +252,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, sidebarOpen, onClo
                     '& .MuiDrawer-paper': {
                         boxSizing: 'border-box',
                         width: drawerWidth,
+                        bgcolor: '#022c22', // Darker, richer emerald
+                        color: 'rgba(255, 255, 255, 0.7)',
                         backgroundImage: 'none',
-                        borderRight: '1px solid',
-                        borderColor: 'divider'
+                        borderRight: 'none',
+                        boxShadow: '4px 0 24px rgba(0,0,0,0.1)'
                     },
                 }}
             >
@@ -270,9 +272,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, sidebarOpen, onClo
                         width: sidebarOpen ? drawerWidth : miniDrawerWidth,
                         transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                         overflowX: 'hidden',
-                        borderRight: '1px solid',
-                        borderColor: 'divider',
+                        bgcolor: '#022c22', // Darker, richer emerald for more "professional" feel
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        borderRight: 'none',
                         backgroundImage: 'none',
+                        boxShadow: '4px 0 24px rgba(0,0,0,0.05)'
                     },
                 }}
                 open

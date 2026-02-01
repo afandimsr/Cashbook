@@ -3,8 +3,7 @@ import { useRoutes, Navigate } from 'react-router-dom';
 import { DashboardLayout } from '../presentation/layouts/DashboardLayout';
 import { OverviewPage } from '../presentation/pages/dashboard/overview/OverviewPage';
 import { AuthLayout } from '../presentation/layouts/AuthLayout';
-import { LoginPage } from '../presentation/pages/auth/LoginPage';
-// import LoginPageNew from '../presentation/pages/auth/LoginPageNew';
+import { LoginPageNew } from '../presentation/pages/auth/LoginPage';
 import { ProtectedRoute } from '../presentation/components/auth/ProtectedRoute';
 import { GuestRoute } from '../presentation/components/auth/GuestRoute';
 import { AdminRoute } from '../presentation/components/auth/AdminRoute';
@@ -19,10 +18,11 @@ import { TransactionPage } from '../presentation/pages/dashboard/transactions/Tr
 import { BudgetPage } from '../presentation/pages/dashboard/budgets/BudgetPage';
 import { ReportsPage } from '../presentation/pages/dashboard/reports/ReportsPage';
 import { RecurringPage } from '../presentation/pages/dashboard/recurring/RecurringPage';
+import config from './config';
 
 export const AppRoutes: React.FC = () => {
-    const element = useRoutes([
-         {
+    const routes = [
+        {
             path: '/',
             element: <Navigate to="/dashboard" replace />
         },
@@ -33,7 +33,7 @@ export const AppRoutes: React.FC = () => {
                     path: '/login',
                     element: <AuthLayout />,
                     children: [
-                        { index: true, element: <LoginPage /> }
+                        { index: true, element: <LoginPageNew /> }
                     ]
                 },
                 {
@@ -42,10 +42,13 @@ export const AppRoutes: React.FC = () => {
                 }
             ]
         },
-        {
-            path: '/debug',
-            element: <DebugAuthPage />
-        },
+        // Only include debug route in development
+        ...(config.IS_DEV ? [
+            {
+                path: '/debug',
+                element: <DebugAuthPage />
+            }
+        ] : []),
         {
             path: '/',
             element: <ProtectedRoute />, // Protect these routes
@@ -74,7 +77,7 @@ export const AppRoutes: React.FC = () => {
             ]
         },
         { path: '*', element: <Navigate to="/login" replace /> }
-    ]);
-
+    ];
+    const element = useRoutes(routes);
     return element;
 };
