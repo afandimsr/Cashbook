@@ -232,12 +232,12 @@ func (h *UserHandler) GoogleCallback(c *gin.Context) {
 		// Redirect to frontend error page or return JSON error?
 		// Usually callback endpoint redirects to frontend.
 		// If error, redirect to login with error param.
-		frontendErrorURL := "http://localhost:5173/login?error=" + err.Error()
+		frontendErrorURL := "http://localhost:3000/login?error=" + err.Error()
 		c.Redirect(http.StatusTemporaryRedirect, frontendErrorURL)
 		return
 	}
 
 	// Redirect to frontend with token as query param or set in cookie
-	frontendURL := "http://localhost:5173/oauth/callback?token=" + token
+	frontendURL := "http://localhost:3000/oauth/callback?token=" + token
 	c.Redirect(http.StatusTemporaryRedirect, frontendURL)
 }

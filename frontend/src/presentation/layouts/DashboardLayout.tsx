@@ -24,7 +24,7 @@ export const DashboardLayout: React.FC = () => {
         <Box sx={{
             display: 'flex',
             minHeight: '100vh',
-            bgcolor: (theme) => theme.palette.mode === 'light' ? '#F8FAFC' : 'background.default',
+            bgcolor: 'background.default',
             transition: 'background-color 0.3s ease-in-out'
         }}>
             <Topbar
