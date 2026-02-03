@@ -18,12 +18,12 @@ export const Footer: React.FC = () => {
         >
             <Container maxWidth="xl">
                 <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
-                    spacing={2}
+                    direction={{ xs: 'column', md: 'row' }}
+                    spacing={2.5}
                     justifyContent="space-between"
                     alignItems="center"
                 >
-                    <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+                    <Box sx={{ textAlign: { xs: 'center', md: 'left' } }}>
                         <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
                             © {currentYear} {config.APP_TITLE}. All rights reserved.
                         </Typography>
@@ -31,7 +31,7 @@ export const Footer: React.FC = () => {
 
                     <Stack
                         direction="row"
-                        spacing={3}
+                        spacing={{ xs: 2, sm: 3 }}
                         alignItems="center"
                         sx={{
                             flexWrap: 'wrap',

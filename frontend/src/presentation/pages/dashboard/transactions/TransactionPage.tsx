@@ -26,6 +26,7 @@ import { useTransactions } from '../../../../application/hooks/useTransactions';
 import { useCategories } from '../../../../application/hooks/useCategories';
 import { TransactionList } from './components/TransactionList';
 import { TransactionDialog } from './components/TransactionDialog';
+import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
 
 export const TransactionPage: React.FC = () => {
     const {
@@ -40,6 +41,8 @@ export const TransactionPage: React.FC = () => {
 
     const { categories } = useCategories();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<number | null>(null);
     const [showFilters, setShowFilters] = useState(false);
     const [snack, setSnack] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ open: false, message: '', severity: 'success' });
 
@@ -54,14 +57,21 @@ export const TransactionPage: React.FC = () => {
         }
     };
 
-    const handleDelete = async (id: number) => {
+    const handleDeleteClick = (id: number) => {
+        setItemToDelete(id);
+        setConfirmOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (itemToDelete === null) return;
         try {
-            // useTransactions already asks for confirmation, but ensure snackbar
-            await handleDeleteTransaction(id);
+            await handleDeleteTransaction(itemToDelete);
             setSnack({ open: true, message: 'Transaction deleted', severity: 'success' });
         } catch (err: any) {
             setSnack({ open: true, message: err?.message || 'Failed to delete transaction', severity: 'error' });
-            throw err;
+        } finally {
+            setConfirmOpen(false);
+            setItemToDelete(null);
         }
     };
 
@@ -232,7 +242,7 @@ export const TransactionPage: React.FC = () => {
                 <TransactionList
                     transactions={transactions ?? []}
                     categories={categories ?? []}
-                    onDelete={handleDelete}
+                    onDelete={handleDeleteClick}
                 />
             )}
 
@@ -241,6 +251,14 @@ export const TransactionPage: React.FC = () => {
                 onClose={() => setIsDialogOpen(false)}
                 onSave={handleSaveTransaction}
                 categories={categories ?? []}
+            />
+
+            <ConfirmDialog
+                open={confirmOpen}
+                title="Delete Transaction"
+                message="Are you sure you want to delete this transaction?"
+                onConfirm={handleConfirmDelete}
+                onCancel={() => setConfirmOpen(false)}
             />
 
             <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack({ ...snack, open: false })}>

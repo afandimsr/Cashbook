@@ -52,9 +52,7 @@ export const useTransactions = () => {
     };
 
     const handleDeleteTransaction = async (id: number) => {
-        if (window.confirm('Are you sure you want to delete this transaction?')) {
-            await deleteTransaction(id);
-        }
+        await deleteTransaction(id);
     };
 
     return {

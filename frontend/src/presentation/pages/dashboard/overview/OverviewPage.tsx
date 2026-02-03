@@ -19,11 +19,26 @@ export const OverviewPage: React.FC = () => {
 
     return (
         <Container maxWidth="xl" sx={{ py: 4 }}>
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h3" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
+            <Box sx={{ mb: { xs: 3, md: 4 } }}>
+                <Typography
+                    variant="h3"
+                    sx={{
+                        fontWeight: 800,
+                        color: 'text.primary',
+                        mb: 1,
+                        fontSize: { xs: '2rem', md: '3rem' }
+                    }}
+                >
                     Dashboard
                 </Typography>
-                <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400 }}>
+                <Typography
+                    variant="h6"
+                    color="text.secondary"
+                    sx={{
+                        fontWeight: 400,
+                        fontSize: { xs: '1rem', md: '1.25rem' }
+                    }}
+                >
                     Welcome back! Here's your financial overview.
                 </Typography>
             </Box>
@@ -38,7 +53,14 @@ export const OverviewPage: React.FC = () => {
                     <Typography variant="h5" sx={{ fontWeight: 700, mb: 2 }}>
                         Recent Transactions
                     </Typography>
-                    <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+                    <TableContainer
+                        component={Paper}
+                        sx={{
+                            borderRadius: 3,
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                            overflowX: 'auto'
+                        }}
+                    >
                         <Table>
                             <TableHead sx={{ backgroundColor: 'action.hover' }}>
                                 <TableRow>

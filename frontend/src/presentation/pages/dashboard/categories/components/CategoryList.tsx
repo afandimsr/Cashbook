@@ -27,7 +27,14 @@ export const CategoryList: React.FC<CategoryListProps> = ({ categories, onEdit, 
     const items = categories ?? [];
 
     return (
-        <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+        <TableContainer
+            component={Paper}
+            sx={{
+                borderRadius: 3,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                overflowX: 'auto'
+            }}
+        >
             <Table>
                 <TableHead sx={{ backgroundColor: 'action.hover' }}>
                     <TableRow>
