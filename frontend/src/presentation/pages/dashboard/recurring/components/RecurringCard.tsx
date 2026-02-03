@@ -20,31 +20,31 @@ interface RecurringCardProps {
 
 export const RecurringCard: React.FC<RecurringCardProps> = ({ recurring, category, onDelete }) => {
     return (
-        <Card sx={{ p: 3, borderRadius: 3 }}>
+        <Card sx={{ p: { xs: 2, md: 3 }, borderRadius: 3 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="start" >
-                    <Box>
-                        <Stack direction="row" spacing={1} mb={1} width="100%" overflow="auto">
-                            <Chip
-                                label={recurring.frequency.toUpperCase()}
-                                size="small"
-                                color="primary"
-                                variant="outlined"
-                            />
-                            <Chip
-                                label={recurring.type.toUpperCase()}
-                                size="small"
-                                color={recurring.type === 'income' ? 'success' : 'error'}
-                            />
-                        </Stack>
-                        <Typography variant="h6" sx={{ fontWeight: 700 }}>{recurring.note || 'No Note'}</Typography>
-                        <Typography color="text.secondary" variant="body2">
-                            {category?.name || 'Unknown Category'}
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                            {formatIDR(recurring.amount)}
-                        </Typography>
-                    </Box>
-                
+                <Box>
+                    <Stack direction="row" spacing={1} mb={1} width="100%" overflow="auto">
+                        <Chip
+                            label={recurring.frequency.toUpperCase()}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                        />
+                        <Chip
+                            label={recurring.type.toUpperCase()}
+                            size="small"
+                            color={recurring.type === 'income' ? 'success' : 'error'}
+                        />
+                    </Stack>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>{recurring.note || 'No Note'}</Typography>
+                    <Typography color="text.secondary" variant="body2">
+                        {category?.name || 'Unknown Category'}
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                        {formatIDR(recurring.amount)}
+                    </Typography>
+                </Box>
+
             </Stack>
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="caption" color="text.secondary">

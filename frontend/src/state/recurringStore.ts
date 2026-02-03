@@ -12,7 +12,7 @@ interface RecurringState {
     processDue: () => Promise<void>;
 }
 
-export const useRecurringStore = create<RecurringState>((set) => ({
+export const useRecurringStore = create<RecurringState>((set, get) => ({
     recurringTransactions: [],
     isLoading: false,
     error: null,
@@ -31,10 +31,12 @@ export const useRecurringStore = create<RecurringState>((set) => ({
         set({ isLoading: true, error: null });
         try {
             const data = await apiClient.post<RecurringTransaction>('/recurring', recurring);
-            set(state => ({
-                recurringTransactions: [...state.recurringTransactions, data],
-                isLoading: false
-            }));
+            if (data) {
+                // Instead of manually appending, we refetch to get the full state from server
+                // This ensures IDs and other server-generated fields are correct.
+                await (get() as any).fetchRecurring();
+            }
+            set({ isLoading: false });
         } catch (error: any) {
             set({ error: error.message, isLoading: false });
             throw error;
@@ -45,10 +47,8 @@ export const useRecurringStore = create<RecurringState>((set) => ({
         set({ isLoading: true, error: null });
         try {
             await apiClient.delete(`/recurring/${id}`);
-            set(state => ({
-                recurringTransactions: state.recurringTransactions.filter(rt => rt.id !== id),
-                isLoading: false
-            }));
+            await (get() as any).fetchRecurring();
+            set({ isLoading: false });
         } catch (error: any) {
             set({ error: error.message, isLoading: false });
             throw error;
@@ -59,6 +59,7 @@ export const useRecurringStore = create<RecurringState>((set) => ({
         set({ isLoading: true, error: null });
         try {
             await apiClient.post('/recurring/process', {});
+            await get().fetchRecurring();
             set({ isLoading: false });
         } catch (error: any) {
             set({ error: error.message, isLoading: false });

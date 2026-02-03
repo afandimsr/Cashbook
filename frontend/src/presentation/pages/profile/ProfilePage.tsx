@@ -29,11 +29,19 @@ const ProfileSkeleton = () => {
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
             <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 4, mb: 4 }} />
-            <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 3, px: { xs: 2, sm: 4 }, transform: 'translateY(-40px)', mb: 4 }}>
-                <Skeleton variant="circular" width={140} height={140} sx={{ border: `6px solid ${theme.palette.background.paper}` }} />
-                <Box sx={{ flexGrow: 1, pb: 1 }}>
-                    <Skeleton variant="text" width="40%" height={60} />
-                    <Skeleton variant="text" width="30%" />
+            <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'center', sm: 'flex-end' },
+                gap: 3,
+                px: { xs: 2, sm: 4 },
+                mt: { xs: -10, sm: -5 },
+                mb: 4
+            }}>
+                <Skeleton variant="circular" width={140} height={140} sx={{ border: `6px solid ${theme.palette.background.paper}`, flexShrink: 0 }} />
+                <Box sx={{ flexGrow: 1, pb: 1, textAlign: { xs: 'center', sm: 'left' } }}>
+                    <Skeleton variant="text" width="60%" height={60} sx={{ mx: { xs: 'auto', sm: 0 } }} />
+                    <Skeleton variant="text" width="40%" sx={{ mx: { xs: 'auto', sm: 0 } }} />
                 </Box>
             </Box>
             <Grid container spacing={4}>
@@ -130,8 +138,8 @@ export const ProfilePage: React.FC = () => {
                     <Box sx={{ mb: { xs: 0, sm: 6 }, flexGrow: 1 }}>
                         <Typography variant="h4" sx={{
                             fontWeight: 800,
-                            color: { xs: theme.palette.text.primary, sm: 'white' },
-                            textShadow: { xs: 'none', sm: '0 2px 4px rgba(0,0,0,0.2)' },
+                            color: 'white',
+                            textShadow: '0 2px 4px rgba(0,0,0,0.2)',
                             letterSpacing: '-0.02em',
                             fontSize: { xs: '1.75rem', sm: '2.125rem' }
                         }}>
@@ -143,18 +151,18 @@ export const ProfilePage: React.FC = () => {
                             alignItems="center"
                             sx={{ mt: 0.5 }}
                         >
-                            <Typography variant="subtitle1" sx={{ color: { xs: 'text.secondary', sm: 'rgba(255,255,255,0.8)' }, fontWeight: 500 }}>
+                            <Typography variant="subtitle1" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
                                 {user?.role === 'ADMIN' ? 'Administrator' : 'Team Member'}
                             </Typography>
                             <Box sx={{
                                 width: 4,
                                 height: 4,
                                 borderRadius: '50%',
-                                bgcolor: { xs: 'text.disabled', sm: 'rgba(255,255,255,0.4)' },
+                                bgcolor: 'rgba(255,255,255,0.4)',
                                 alignSelf: 'center',
                                 display: { xs: 'none', sm: 'block' }
                             }} />
-                            <Typography variant="subtitle1" sx={{ color: { xs: 'text.secondary', sm: 'rgba(255,255,255,0.8)' }, fontWeight: 500 }}>
+                            <Typography variant="subtitle1" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
                                 {user?.email}
                             </Typography>
                         </Stack>
@@ -163,15 +171,17 @@ export const ProfilePage: React.FC = () => {
                         variant="contained"
                         startIcon={<EditIcon />}
                         sx={{
-                            mb: { xs: 0, sm: 6 },
+                            mb: { xs: 0, sm: 4 },
                             borderRadius: 2,
                             textTransform: 'none',
                             fontWeight: 600,
                             px: 3,
+                            py: 1,
                             bgcolor: { xs: 'primary.main', sm: 'white' },
                             color: { xs: 'white', sm: '#1e293b' },
                             '&:hover': { bgcolor: { xs: 'primary.dark', sm: 'rgba(255,255,255,0.9)' } },
-                            mt: { xs: 1, sm: 0 }
+                            mt: { xs: 1, sm: 0 },
+                            width: { xs: '100%', sm: 'auto' }
                         }}
                     >
                         Edit Profile
@@ -203,22 +213,35 @@ export const ProfilePage: React.FC = () => {
                                         { label: 'Member Since', value: 'January 2026', icon: <CalendarMonthIcon color="primary" /> },
                                     ].map((info, idx) => (
                                         <Grid size={{ xs: 12, sm: 6 }} key={idx}>
-                                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                            <Box sx={{
+                                                display: 'flex',
+                                                gap: 2,
+                                                p: 2,
+                                                borderRadius: 3,
+                                                bgcolor: alpha(theme.palette.action.hover, 0.3),
+                                                border: `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+                                                transition: 'all 0.2s',
+                                                '&:hover': {
+                                                    bgcolor: alpha(theme.palette.action.hover, 0.5),
+                                                    transform: 'translateY(-2px)'
+                                                }
+                                            }}>
                                                 <Box sx={{
                                                     p: 1.5,
                                                     borderRadius: 2,
                                                     bgcolor: alpha(theme.palette.primary.main, 0.1),
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    justifyContent: 'center'
+                                                    justifyContent: 'center',
+                                                    height: 'fit-content'
                                                 }}>
                                                     {info.icon}
                                                 </Box>
-                                                <Box>
-                                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                                                <Box sx={{ overflow: 'hidden' }}>
+                                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block' }}>
                                                         {info.label}
                                                     </Typography>
-                                                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                                                    <Typography variant="body1" sx={{ fontWeight: 600, wordBreak: 'break-all' }}>
                                                         {info.value}
                                                     </Typography>
                                                 </Box>

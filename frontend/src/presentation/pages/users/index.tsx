@@ -118,6 +118,7 @@ export const UserListPage: React.FC = () => {
                     width: '100%',
                     borderRadius: 3,
                     overflow: 'hidden',
+                    overflowX: 'auto',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
                     border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`
                 }}
