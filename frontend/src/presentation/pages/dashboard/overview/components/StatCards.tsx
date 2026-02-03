@@ -32,7 +32,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, trend, icon, color, i
 
     return (
         <Card sx={{
-            p: 5,
+            p: { xs: 3, md: 5 },
             borderRadius: 4,
             height: '100%',
             boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
@@ -103,19 +103,19 @@ export const StatCards: React.FC<{ summary: any, isLoading: boolean }> = ({ summ
     return (
         <Grid
             container
-            spacing={0}
-            sx={{ 
+            spacing={3}
+            sx={{
                 width: '100%',
-                margin: 0, 
-                flexWrap: 'wrap', 
-                justifyContent: 'space-between' }} // Ensure full width and responsive layout
+                margin: 0,
+            }}
         >
             {stats.map((stat, index) => (
+                <Grid key={index} size={{ xs: 12, sm: 6, lg: 3 }}>
                     <StatCard
                         {...stat}
-                        key={index}
                         isLoading={isLoading}
                     />
+                </Grid>
             ))}
         </Grid>
     );

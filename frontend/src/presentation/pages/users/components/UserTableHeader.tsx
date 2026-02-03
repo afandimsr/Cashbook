@@ -19,10 +19,18 @@ export const UserTableHeader: React.FC<UserTableHeaderProps> = ({ onAddClick, se
                 spacing={2}
             >
                 <Box>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+                    <Typography
+                        variant="h4"
+                        sx={{
+                            fontWeight: 700,
+                            color: 'text.primary',
+                            mb: 0.5,
+                            fontSize: { xs: '1.75rem', md: '2.125rem' }
+                        }}
+                    >
                         User Management
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', md: '1rem' } }}>
                         Manage your team members and their account permissions here.
                     </Typography>
                 </Box>
@@ -47,12 +55,12 @@ export const UserTableHeader: React.FC<UserTableHeaderProps> = ({ onAddClick, se
 
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
                 <TextField
-                    placeholder="Search users by name or email..."
+                    placeholder="Search users..."
                     size="small"
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
                     sx={{
-                        maxWidth: 400,
+                        maxWidth: { xs: '100%', sm: 400 },
                         width: '100%',
                         '& .MuiOutlinedInput-root': {
                             borderRadius: 2,

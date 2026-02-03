@@ -61,12 +61,13 @@ func (h *RecurringHandler) CreateRecurring(c *gin.Context) {
 		return
 	}
 
-	if err := h.usecase.CreateRecurring(userID, req); err != nil {
+	rt, err := h.usecase.CreateRecurring(userID, req)
+	if err != nil {
 		response.Error(c, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create recurring transaction", err.Error())
 		return
 	}
 
-	response.Success(c, http.StatusCreated, "recurring transaction created", nil)
+	response.Success(c, http.StatusCreated, "recurring transaction created", rt)
 }
 
 // DeleteRecurring godoc

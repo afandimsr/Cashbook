@@ -9,7 +9,7 @@ import (
 
 type Usecase interface {
 	GetRecurring(userID int64) ([]recurring_transaction.RecurringTransaction, error)
-	CreateRecurring(userID int64, rt recurring_transaction.RecurringTransaction) error
+	CreateRecurring(userID int64, rt recurring_transaction.RecurringTransaction) (recurring_transaction.RecurringTransaction, error)
 	DeleteRecurring(id int64) error
 	ProcessDueTransactions() error
 }
@@ -27,12 +27,15 @@ func (u *usecase) GetRecurring(userID int64) ([]recurring_transaction.RecurringT
 	return u.repo.FindAllByUserID(userID)
 }
 
-func (u *usecase) CreateRecurring(userID int64, rt recurring_transaction.RecurringTransaction) error {
+func (u *usecase) CreateRecurring(userID int64, rt recurring_transaction.RecurringTransaction) (recurring_transaction.RecurringTransaction, error) {
 	rt.UserID = userID
 	if rt.StartDate.IsZero() {
 		rt.StartDate = time.Now()
 	}
-	return u.repo.Save(&rt)
+	if err := u.repo.Save(&rt); err != nil {
+		return recurring_transaction.RecurringTransaction{}, err
+	}
+	return rt, nil
 }
 
 func (u *usecase) DeleteRecurring(id int64) error {
