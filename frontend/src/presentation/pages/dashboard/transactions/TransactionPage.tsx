@@ -14,6 +14,7 @@ import {
     InputAdornment,
     Collapse,
     Chip,
+    Pagination,
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -31,7 +32,12 @@ import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
 export const TransactionPage: React.FC = () => {
     const {
         transactions,
+        total,
+        totalAmount,
         isLoading,
+        page,
+        limit,
+        setPage,
         handleAddTransaction,
         handleDeleteTransaction,
         filters,
@@ -234,6 +240,17 @@ export const TransactionPage: React.FC = () => {
                 </Stack>
             )}
 
+            {hasActiveFilters && (
+                <Box sx={{ mb: 3, p: 2, bgcolor: 'primary.light', color: 'primary.contrastText', borderRadius: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                        Filtered Total
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(totalAmount)}
+                    </Typography>
+                </Box>
+            )}
+
             {isLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
                     <CircularProgress />
@@ -244,6 +261,24 @@ export const TransactionPage: React.FC = () => {
                     categories={categories ?? []}
                     onDelete={handleDeleteClick}
                 />
+            )}
+
+            {!isLoading && total > limit && (
+                <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+                    <Pagination
+                        count={Math.ceil(total / limit)}
+                        page={page}
+                        onChange={(_, value) => setPage(value)}
+                        color="primary"
+                        size="large"
+                        sx={{
+                            '& .MuiPaginationItem-root': {
+                                borderRadius: 2,
+                                fontWeight: 600
+                            }
+                        }}
+                    />
+                </Box>
             )}
 
             <TransactionDialog

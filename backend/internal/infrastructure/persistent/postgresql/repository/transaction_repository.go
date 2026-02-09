@@ -71,6 +71,47 @@ func (r *transactionRepo) FindAllByUserID(userID int64, limit, offset int, filte
 	return transactions, nil
 }
 
+func (r *transactionRepo) GetTotalAndSum(userID int64, filter transaction.Filter) (int64, float64, error) {
+	query := "SELECT COUNT(*), COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = $1"
+	args := []interface{}{userID}
+	placeholderCount := 1
+
+	if filter.Search != "" {
+		placeholderCount++
+		query += " AND note ILIKE $" + strconv.Itoa(placeholderCount)
+		args = append(args, "%"+filter.Search+"%")
+	}
+
+	if filter.CategoryID != 0 {
+		placeholderCount++
+		query += " AND category_id = $" + strconv.Itoa(placeholderCount)
+		args = append(args, filter.CategoryID)
+	}
+
+	if filter.Type != "" {
+		placeholderCount++
+		query += " AND type = $" + strconv.Itoa(placeholderCount)
+		args = append(args, filter.Type)
+	}
+
+	if !filter.StartDate.IsZero() {
+		placeholderCount++
+		query += " AND date >= $" + strconv.Itoa(placeholderCount)
+		args = append(args, filter.StartDate)
+	}
+
+	if !filter.EndDate.IsZero() {
+		placeholderCount++
+		query += " AND date <= $" + strconv.Itoa(placeholderCount)
+		args = append(args, filter.EndDate)
+	}
+
+	var count int64
+	var sum float64
+	err := r.db.QueryRow(query, args...).Scan(&count, &sum)
+	return count, sum, err
+}
+
 func (r *transactionRepo) GetCategorySpending(userID int64, limit, offset int, filter transaction.Filter) ([]transaction.ReportTransaction, error) {
 	query := "SELECT t.id, t.user_id, t.category_id, c.name as category_name, c.color as color, t.amount, t.note, t.date, t.type FROM transactions as t INNER JOIN categories c ON t.category_id = c.id WHERE t.user_id = $1"
 	args := []interface{}{userID}

@@ -12,6 +12,12 @@ type Transaction struct {
 	Type       string    `json:"type"` // "income" or "expense"
 }
 
+type PaginatedTransactions struct {
+	Transactions []Transaction `json:"transactions"`
+	Total        int64         `json:"total"`
+	TotalAmount  float64       `json:"total_amount"`
+}
+
 type ReportTransaction struct {
 	ID           int64     `json:"id"`
 	UserID       int64     `json:"user_id"`
@@ -40,6 +46,7 @@ type DashboardSummary struct {
 
 type Repository interface {
 	FindAllByUserID(userID int64, limit, offset int, filter Filter) ([]Transaction, error)
+	GetTotalAndSum(userID int64, filter Filter) (int64, float64, error)
 	GetCategorySpending(userID int64, limit, offset int, filter Filter) ([]ReportTransaction, error)
 	FindByID(id int64) (Transaction, error)
 	Save(transaction *Transaction) error
