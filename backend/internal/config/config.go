@@ -20,7 +20,8 @@ type Config struct {
 	GoogleClientSecret string
 	GoogleRedirectURL  string
 
-	DB DBConfig
+	DB         DBConfig
+	ElasticApm ElasticApmConfig
 }
 
 type DBConfig struct {
@@ -31,6 +32,15 @@ type DBConfig struct {
 	Pass    string
 	Name    string
 	SSLMode string
+}
+
+type ElasticApmConfig struct {
+	ServerURL        string
+	ServiceName      string
+	Environment      string
+	SecretToken      string
+	VerifyServerCert bool
+	ServiceVersion   string
 }
 
 func Load() *Config {
@@ -57,6 +67,14 @@ func Load() *Config {
 			Pass:    getEnv("DB_PASS", ""),
 			Name:    getEnv("DB_NAME", ""),
 			SSLMode: getEnv("DB_SSLMODE", "disable"),
+		},
+		ElasticApm: ElasticApmConfig{
+			ServerURL:        getEnv("ELASTIC_APM_SERVER_URL", ""),
+			ServiceName:      getEnv("ELASTIC_APM_SERVICE_NAME", "go-app"),
+			Environment:      getEnv("ELASTIC_APM_ENVIRONMENT", "production"),
+			SecretToken:      getEnv("ELASTIC_APM_SECRET_TOKEN", ""),
+			VerifyServerCert: getEnv("ELASTIC_APM_VERIFY_SERVER_CERT", "true") == "true",
+			ServiceVersion:   getEnv("ELASTIC_APM_SERVICE_VERSION", "1.10.0"),
 		},
 		CorsAllowedOrigins: getEnv("CORS_ALLOWED_ORIGINS", "*"),
 	}

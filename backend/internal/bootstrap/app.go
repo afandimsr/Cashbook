@@ -7,6 +7,7 @@ import (
 	"github.com/afandimsr/cashbook-backend/internal/config"
 	"github.com/afandimsr/cashbook-backend/internal/delivery/http/handler"
 	"github.com/afandimsr/cashbook-backend/internal/delivery/http/middleware"
+	"github.com/afandimsr/cashbook-backend/internal/infrastructure/apm"
 	"github.com/afandimsr/cashbook-backend/internal/infrastructure/auth"
 	"github.com/afandimsr/cashbook-backend/internal/infrastructure/external"
 	repo "github.com/afandimsr/cashbook-backend/internal/infrastructure/persistent/postgresql/repository"
@@ -31,6 +32,9 @@ func Run() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// initialize APM
+	apm.Init(cfg)
 
 	authClient := external.NewAuthClient(cfg.ClientAuthURL)
 	googleAuth := auth.NewGoogleAuth(cfg)
@@ -58,8 +62,11 @@ func Run() {
 	recurringHandler := handler.NewRecurringHandler(recurringUsecase)
 
 	r := gin.Default()
-	r.Use(cors.New(middleware.Cors(cfg)))
-	r.Use(middleware.ErrorHandler())
+	r.Use(
+		cors.New(middleware.Cors(cfg)),
+		apm.GinMiddleware(), // Gin Elastic APM
+		middleware.ErrorHandler(),
+	)
 
 	RegisterRoutes(r, userHandler, categoryHandler, transactionHandler, budgetHandler, reportHandler, recurringHandler)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
