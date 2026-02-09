@@ -10,9 +10,17 @@ export interface TransactionFilter {
     end_date?: string;
 }
 
+export interface PaginatedTransactions {
+    transactions: Transaction[];
+    total: number;
+    total_amount: number;
+}
+
 interface TransactionState {
     transactions: Transaction[];
     summary: DashboardSummary | null;
+    total: number;
+    totalAmount: number;
     isLoading: boolean;
     error: string | null;
     fetchTransactions: (page?: number, limit?: number, filters?: TransactionFilter) => Promise<void>;
@@ -25,6 +33,8 @@ interface TransactionState {
 export const useTransactionStore = create<TransactionState>((set, get) => ({
     transactions: [],
     summary: null,
+    total: 0,
+    totalAmount: 0,
     isLoading: false,
     error: null,
 
@@ -38,8 +48,13 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
                     Object.entries(filters).filter(([_, v]) => v !== undefined && v !== '')
                 )
             });
-            const data = await apiClient.get<Transaction[]>(`/transactions?${params.toString()}`);
-            set({ transactions: data, isLoading: false });
+            const data = await apiClient.get<PaginatedTransactions>(`/transactions?${params.toString()}`);
+            set({
+                transactions: data.transactions || [],
+                total: data.total || 0,
+                totalAmount: data.total_amount || 0,
+                isLoading: false
+            });
         } catch (error: any) {
             set({ error: error.message, isLoading: false });
         }

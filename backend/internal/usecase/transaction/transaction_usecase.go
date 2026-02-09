@@ -7,7 +7,7 @@ import (
 )
 
 type Usecase interface {
-	GetAllByUserID(userID int64, page, limit int, filter transaction.Filter) ([]transaction.Transaction, error)
+	GetAllByUserID(userID int64, page, limit int, filter transaction.Filter) (transaction.PaginatedTransactions, error)
 	GetByID(id int64) (transaction.Transaction, error)
 	Create(t transaction.Transaction) error
 	Update(id int64, t transaction.Transaction) error
@@ -25,9 +25,23 @@ func New(repo transaction.Repository) Usecase {
 	}
 }
 
-func (u *usecase) GetAllByUserID(userID int64, page, limit int, filter transaction.Filter) ([]transaction.Transaction, error) {
+func (u *usecase) GetAllByUserID(userID int64, page, limit int, filter transaction.Filter) (transaction.PaginatedTransactions, error) {
 	offset := (page - 1) * limit
-	return u.repo.FindAllByUserID(userID, limit, offset, filter)
+	txs, err := u.repo.FindAllByUserID(userID, limit, offset, filter)
+	if err != nil {
+		return transaction.PaginatedTransactions{}, err
+	}
+
+	total, sum, err := u.repo.GetTotalAndSum(userID, filter)
+	if err != nil {
+		return transaction.PaginatedTransactions{}, err
+	}
+
+	return transaction.PaginatedTransactions{
+		Transactions: txs,
+		Total:        total,
+		TotalAmount:  sum,
+	}, nil
 }
 
 func (u *usecase) GetByID(id int64) (transaction.Transaction, error) {

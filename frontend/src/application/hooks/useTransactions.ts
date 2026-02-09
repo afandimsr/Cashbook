@@ -6,6 +6,8 @@ import type { Transaction } from '../../domain/entities/Transaction';
 export const useTransactions = () => {
     const {
         transactions,
+        total,
+        totalAmount,
         isLoading,
         error,
         fetchTransactions,
@@ -14,6 +16,8 @@ export const useTransactions = () => {
     } = useTransactionStore();
 
     const [searchParams, setSearchParams] = useSearchParams();
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
 
     const filters: TransactionFilter = {
         q: searchParams.get('q') || '',
@@ -23,9 +27,9 @@ export const useTransactions = () => {
         end_date: searchParams.get('end_date') || '',
     };
 
-    const refreshTransactions = useCallback((page = 1, limit = 20) => {
+    const refreshTransactions = useCallback(() => {
         return fetchTransactions(page, limit, filters);
-    }, [fetchTransactions, searchParams]); // Depends on searchParams to trigger on change
+    }, [fetchTransactions, page, limit, searchParams]); // Depends on page, limit, and params
 
     useEffect(() => {
         refreshTransactions();
@@ -40,6 +44,13 @@ export const useTransactions = () => {
                 nextParams.delete(key);
             }
         });
+        nextParams.set('page', '1'); // Reset to page 1 on filter change
+        setSearchParams(nextParams);
+    };
+
+    const setPage = (newPage: number) => {
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.set('page', newPage.toString());
         setSearchParams(nextParams);
     };
 
@@ -57,8 +68,13 @@ export const useTransactions = () => {
 
     return {
         transactions,
+        total,
+        totalAmount,
         isLoading,
         error,
+        page,
+        limit,
+        setPage,
         refreshTransactions,
         handleAddTransaction,
         handleDeleteTransaction,
