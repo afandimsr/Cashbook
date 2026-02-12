@@ -19,8 +19,8 @@ func NewReportHandler(usecase uc.Usecase) *ReportHandler {
 }
 
 // GetCategorySpending godoc
-// @Summary      Get category spending report
-// @Description  Get a breakdown of spending by category for a specific month and year
+// @Summary      Analyze spending by category
+// @Description  Generate a detailed breakdown of expenses categorized for a specific period to identify spending patterns.
 // @Tags         Reports
 // @Produce      json
 // @Param        month  query     int  false  "Month (1-12)"

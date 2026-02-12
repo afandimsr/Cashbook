@@ -21,14 +21,14 @@ const docTemplate = `{
     "paths": {
         "/budgets": {
             "get": {
-                "description": "Get budgets for a specific month and year",
+                "description": "Retrieve monthly budget targets and current spending progress for a specific period to maintain financial discipline.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Budgets"
                 ],
-                "summary": "Get budgets",
+                "summary": "Track budget progress",
                 "parameters": [
                     {
                         "type": "integer",
@@ -65,7 +65,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Set or update a budget for a category, month, and year",
+                "description": "Set or update a monthly spending limit for a specific financial category.",
                 "consumes": [
                     "application/json"
                 ],
@@ -75,7 +75,7 @@ const docTemplate = `{
                 "tags": [
                     "Budgets"
                 ],
-                "summary": "Set or update budget",
+                "summary": "Establish category budget",
                 "parameters": [
                     {
                         "description": "Budget payload",
@@ -117,14 +117,14 @@ const docTemplate = `{
         },
         "/categories": {
             "get": {
-                "description": "Get all categories for the authenticated user",
+                "description": "Retrieve all personalized spending and income categories available for the user.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Categories"
                 ],
-                "summary": "Get all categories",
+                "summary": "List financial categories",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -147,7 +147,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a new category for the authenticated user",
+                "description": "Define a new classification category with custom styling (color/icon) for transaction organization.",
                 "consumes": [
                     "application/json"
                 ],
@@ -157,7 +157,7 @@ const docTemplate = `{
                 "tags": [
                     "Categories"
                 ],
-                "summary": "Create category",
+                "summary": "Create a new category",
                 "parameters": [
                     {
                         "description": "Category payload",
@@ -199,7 +199,7 @@ const docTemplate = `{
         },
         "/categories/{id}": {
             "put": {
-                "description": "Update an existing category",
+                "description": "Update the properties of an existing category, such as name or visual identifiers.",
                 "consumes": [
                     "application/json"
                 ],
@@ -209,7 +209,7 @@ const docTemplate = `{
                 "tags": [
                     "Categories"
                 ],
-                "summary": "Update category",
+                "summary": "Modify category details",
                 "parameters": [
                     {
                         "type": "integer",
@@ -262,14 +262,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete an existing category",
+                "description": "Permanently remove a transaction category from the user's profile.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Categories"
                 ],
-                "summary": "Delete category",
+                "summary": "Archive category",
                 "parameters": [
                     {
                         "type": "integer",
@@ -315,6 +315,7 @@ const docTemplate = `{
         },
         "/login": {
             "post": {
+                "description": "Validate user credentials and generate a secure JWT access token for platform interaction.",
                 "consumes": [
                     "application/json"
                 ],
@@ -324,7 +325,7 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "Login user",
+                "summary": "Authenticate user session",
                 "parameters": [
                     {
                         "description": "Login payload",
@@ -366,14 +367,14 @@ const docTemplate = `{
         },
         "/recurring": {
             "get": {
-                "description": "Get all recurring transactions for the authenticated user",
+                "description": "Retrieve all active recurring transaction templates set up for automated financial tracking.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Recurring"
                 ],
-                "summary": "Get recurring transactions",
+                "summary": "Browse recurring automation templates",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -396,7 +397,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a new recurring transaction template",
+                "description": "Define a new recurring transaction pattern to automate repetitive financial entries like bills or subscriptions.",
                 "consumes": [
                     "application/json"
                 ],
@@ -406,7 +407,7 @@ const docTemplate = `{
                 "tags": [
                     "Recurring"
                 ],
-                "summary": "Create recurring transaction",
+                "summary": "Create automation template",
                 "parameters": [
                     {
                         "description": "Recurring Transaction payload",
@@ -448,14 +449,14 @@ const docTemplate = `{
         },
         "/recurring/process": {
             "post": {
-                "description": "Trigger the manual processing of due recurring transactions into transactions",
+                "description": "Manually trigger the processing of due recurring templates to generate actual financial transactions for the current period.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Recurring"
                 ],
-                "summary": "Process due recurring transactions",
+                "summary": "Execute pending automations",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -480,14 +481,14 @@ const docTemplate = `{
         },
         "/recurring/{id}": {
             "delete": {
-                "description": "Delete an existing recurring transaction template",
+                "description": "Permanently remove a recurring transaction pattern from the automation schedule.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Recurring"
                 ],
-                "summary": "Delete recurring transaction",
+                "summary": "Discard automation template",
                 "parameters": [
                     {
                         "type": "integer",
@@ -533,14 +534,14 @@ const docTemplate = `{
         },
         "/reports/spending": {
             "get": {
-                "description": "Get a breakdown of spending by category for a specific month and year",
+                "description": "Generate a detailed breakdown of expenses categorized for a specific period to identify spending patterns.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Reports"
                 ],
-                "summary": "Get category spending report",
+                "summary": "Analyze spending by category",
                 "parameters": [
                     {
                         "type": "integer",
@@ -579,14 +580,14 @@ const docTemplate = `{
         },
         "/transactions": {
             "get": {
-                "description": "Get transactions for the authenticated user with pagination and search",
+                "description": "Retrieve a detailed list of financial transactions with support for pagination and business filters like category, date range, and type (income/expense).",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Transactions"
                 ],
-                "summary": "Get transactions",
+                "summary": "Browse financial transactions",
                 "parameters": [
                     {
                         "type": "integer",
@@ -629,7 +630,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a new transaction for the authenticated user",
+                "description": "Log a new financial entry (income or expense) to track personal cash flow.",
                 "consumes": [
                     "application/json"
                 ],
@@ -639,7 +640,7 @@ const docTemplate = `{
                 "tags": [
                     "Transactions"
                 ],
-                "summary": "Create transaction",
+                "summary": "Record a new transaction",
                 "parameters": [
                     {
                         "description": "Transaction payload",
@@ -681,14 +682,14 @@ const docTemplate = `{
         },
         "/transactions/summary": {
             "get": {
-                "description": "Get total balance, income, and expenses for the authenticated user",
+                "description": "Calculate and retrieve the current total balance, aggregate income, and aggregate expenses for an immediate overview of financial status.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Transactions"
                 ],
-                "summary": "Get dashboard summary",
+                "summary": "Dashboard financial health summary",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -713,7 +714,7 @@ const docTemplate = `{
         },
         "/transactions/{id}": {
             "put": {
-                "description": "Update an existing transaction",
+                "description": "Update the details of an existing transaction to ensure ledger accuracy.",
                 "consumes": [
                     "application/json"
                 ],
@@ -723,7 +724,7 @@ const docTemplate = `{
                 "tags": [
                     "Transactions"
                 ],
-                "summary": "Update transaction",
+                "summary": "Amend a financial record",
                 "parameters": [
                     {
                         "type": "integer",
@@ -776,14 +777,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete an existing transaction",
+                "description": "Permanently delete a transaction from the personal finance history.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Transactions"
                 ],
-                "summary": "Delete transaction",
+                "summary": "Remove a financial record",
                 "parameters": [
                     {
                         "type": "integer",
@@ -829,13 +830,14 @@ const docTemplate = `{
         },
         "/users": {
             "get": {
+                "description": "Retrieve a paginated list of all registered users in the application.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get all users",
+                "summary": "Administrative user list",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -852,6 +854,7 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "description": "Create a new user entry with assigned roles and initial status (Admin privileged).",
                 "consumes": [
                     "application/json"
                 ],
@@ -861,7 +864,7 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "Create user",
+                "summary": "Provision new user account",
                 "parameters": [
                     {
                         "description": "User payload",
@@ -897,13 +900,14 @@ const docTemplate = `{
         },
         "/users/{id}": {
             "get": {
+                "description": "Fetch comprehensive details of a specific user account by their unique identifier.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get user by ID",
+                "summary": "Retrieve user profile",
                 "parameters": [
                     {
                         "type": "integer",
@@ -935,6 +939,7 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "description": "Modify existing user account details and preferences.",
                 "consumes": [
                     "application/json"
                 ],
@@ -944,7 +949,7 @@ const docTemplate = `{
                 "tags": [
                     "Users"
                 ],
-                "summary": "Update user",
+                "summary": "Update user information",
                 "parameters": [
                     {
                         "type": "integer",
@@ -991,13 +996,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "description": "Permanently remove a user identity and access from the system.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Users"
                 ],
-                "summary": "Delete user",
+                "summary": "Deactivate user account",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1022,6 +1028,65 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorSwaggerResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorSwaggerResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/reset-password": {
+            "post": {
+                "description": "Administrative utility to securely reset a user's password following ISO security standards.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Enforce password reset",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Reset payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.PasswordResetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessSingleUserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorSwaggerResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorSwaggerResponse"
                         }
@@ -1341,6 +1406,18 @@ const docTemplate = `{
                 }
             }
         },
+        "user.PasswordResetRequest": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
         "user.User": {
             "type": "object",
             "properties": {
@@ -1353,8 +1430,20 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "is_active": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         }
@@ -1367,8 +1456,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8181",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "Go Gin API",
-	Description:      "Clean Architecture Go Gin API",
+	Title:            "CashBook - Personal Finance API",
+	Description:      "API Server for CashBook Personal Finance Manager. This API handles transactions, budgeting, category management, and financial reporting.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

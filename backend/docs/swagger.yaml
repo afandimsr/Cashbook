@@ -206,6 +206,14 @@ definitions:
     - email
     - password
     type: object
+  user.PasswordResetRequest:
+    properties:
+      password:
+        minLength: 8
+        type: string
+    required:
+    - password
+    type: object
   user.User:
     properties:
       email:
@@ -214,22 +222,32 @@ definitions:
         type: string
       id:
         type: integer
+      is_active:
+        type: boolean
       name:
         type: string
+      password:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
     type: object
 host: localhost:8181
 info:
   contact:
     email: mohamadafandi71@gmail.com
     name: Afandi
-  description: Clean Architecture Go Gin API
+  description: API Server for CashBook Personal Finance Manager. This API handles
+    transactions, budgeting, category management, and financial reporting.
   termsOfService: http://swagger.io/terms/
-  title: Go Gin API
+  title: CashBook - Personal Finance API
   version: "1.0"
 paths:
   /budgets:
     get:
-      description: Get budgets for a specific month and year
+      description: Retrieve monthly budget targets and current spending progress for
+        a specific period to maintain financial discipline.
       parameters:
       - description: Month (1-12)
         in: query
@@ -254,13 +272,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Get budgets
+      summary: Track budget progress
       tags:
       - Budgets
     post:
       consumes:
       - application/json
-      description: Set or update a budget for a category, month, and year
+      description: Set or update a monthly spending limit for a specific financial
+        category.
       parameters:
       - description: Budget payload
         in: body
@@ -287,12 +306,13 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Set or update budget
+      summary: Establish category budget
       tags:
       - Budgets
   /categories:
     get:
-      description: Get all categories for the authenticated user
+      description: Retrieve all personalized spending and income categories available
+        for the user.
       produces:
       - application/json
       responses:
@@ -308,13 +328,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Get all categories
+      summary: List financial categories
       tags:
       - Categories
     post:
       consumes:
       - application/json
-      description: Create a new category for the authenticated user
+      description: Define a new classification category with custom styling (color/icon)
+        for transaction organization.
       parameters:
       - description: Category payload
         in: body
@@ -341,12 +362,12 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Create category
+      summary: Create a new category
       tags:
       - Categories
   /categories/{id}:
     delete:
-      description: Delete an existing category
+      description: Permanently remove a transaction category from the user's profile.
       parameters:
       - description: Category ID
         in: path
@@ -376,13 +397,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Delete category
+      summary: Archive category
       tags:
       - Categories
     put:
       consumes:
       - application/json
-      description: Update an existing category
+      description: Update the properties of an existing category, such as name or
+        visual identifiers.
       parameters:
       - description: Category ID
         in: path
@@ -418,13 +440,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Update category
+      summary: Modify category details
       tags:
       - Categories
   /login:
     post:
       consumes:
       - application/json
+      description: Validate user credentials and generate a secure JWT access token
+        for platform interaction.
       parameters:
       - description: Login payload
         in: body
@@ -451,12 +475,13 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Login user
+      summary: Authenticate user session
       tags:
       - Users
   /recurring:
     get:
-      description: Get all recurring transactions for the authenticated user
+      description: Retrieve all active recurring transaction templates set up for
+        automated financial tracking.
       produces:
       - application/json
       responses:
@@ -472,13 +497,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Get recurring transactions
+      summary: Browse recurring automation templates
       tags:
       - Recurring
     post:
       consumes:
       - application/json
-      description: Create a new recurring transaction template
+      description: Define a new recurring transaction pattern to automate repetitive
+        financial entries like bills or subscriptions.
       parameters:
       - description: Recurring Transaction payload
         in: body
@@ -505,12 +531,13 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Create recurring transaction
+      summary: Create automation template
       tags:
       - Recurring
   /recurring/{id}:
     delete:
-      description: Delete an existing recurring transaction template
+      description: Permanently remove a recurring transaction pattern from the automation
+        schedule.
       parameters:
       - description: Recurring Transaction ID
         in: path
@@ -540,13 +567,13 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Delete recurring transaction
+      summary: Discard automation template
       tags:
       - Recurring
   /recurring/process:
     post:
-      description: Trigger the manual processing of due recurring transactions into
-        transactions
+      description: Manually trigger the processing of due recurring templates to generate
+        actual financial transactions for the current period.
       produces:
       - application/json
       responses:
@@ -562,13 +589,13 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Process due recurring transactions
+      summary: Execute pending automations
       tags:
       - Recurring
   /reports/spending:
     get:
-      description: Get a breakdown of spending by category for a specific month and
-        year
+      description: Generate a detailed breakdown of expenses categorized for a specific
+        period to identify spending patterns.
       parameters:
       - description: Month (1-12)
         in: query
@@ -593,13 +620,13 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Get category spending report
+      summary: Analyze spending by category
       tags:
       - Reports
   /transactions:
     get:
-      description: Get transactions for the authenticated user with pagination and
-        search
+      description: Retrieve a detailed list of financial transactions with support
+        for pagination and business filters like category, date range, and type (income/expense).
       parameters:
       - description: Page number
         in: query
@@ -628,13 +655,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Get transactions
+      summary: Browse financial transactions
       tags:
       - Transactions
     post:
       consumes:
       - application/json
-      description: Create a new transaction for the authenticated user
+      description: Log a new financial entry (income or expense) to track personal
+        cash flow.
       parameters:
       - description: Transaction payload
         in: body
@@ -661,12 +689,12 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Create transaction
+      summary: Record a new transaction
       tags:
       - Transactions
   /transactions/{id}:
     delete:
-      description: Delete an existing transaction
+      description: Permanently delete a transaction from the personal finance history.
       parameters:
       - description: Transaction ID
         in: path
@@ -696,13 +724,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Delete transaction
+      summary: Remove a financial record
       tags:
       - Transactions
     put:
       consumes:
       - application/json
-      description: Update an existing transaction
+      description: Update the details of an existing transaction to ensure ledger
+        accuracy.
       parameters:
       - description: Transaction ID
         in: path
@@ -738,12 +767,13 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Update transaction
+      summary: Amend a financial record
       tags:
       - Transactions
   /transactions/summary:
     get:
-      description: Get total balance, income, and expenses for the authenticated user
+      description: Calculate and retrieve the current total balance, aggregate income,
+        and aggregate expenses for an immediate overview of financial status.
       produces:
       - application/json
       responses:
@@ -759,11 +789,12 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Get dashboard summary
+      summary: Dashboard financial health summary
       tags:
       - Transactions
   /users:
     get:
+      description: Retrieve a paginated list of all registered users in the application.
       produces:
       - application/json
       responses:
@@ -775,12 +806,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Get all users
+      summary: Administrative user list
       tags:
       - Users
     post:
       consumes:
       - application/json
+      description: Create a new user entry with assigned roles and initial status
+        (Admin privileged).
       parameters:
       - description: User payload
         in: body
@@ -803,11 +836,12 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Create user
+      summary: Provision new user account
       tags:
       - Users
   /users/{id}:
     delete:
+      description: Permanently remove a user identity and access from the system.
       parameters:
       - description: User ID
         in: path
@@ -833,10 +867,12 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Delete user
+      summary: Deactivate user account
       tags:
       - Users
     get:
+      description: Fetch comprehensive details of a specific user account by their
+        unique identifier.
       parameters:
       - description: User ID
         in: path
@@ -858,12 +894,13 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Get user by ID
+      summary: Retrieve user profile
       tags:
       - Users
     put:
       consumes:
       - application/json
+      description: Modify existing user account details and preferences.
       parameters:
       - description: User ID
         in: path
@@ -895,7 +932,47 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
-      summary: Update user
+      summary: Update user information
+      tags:
+      - Users
+  /users/{id}/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Administrative utility to securely reset a user's password following
+        ISO security standards.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Reset payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/user.PasswordResetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.SuccessSingleUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorSwaggerResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/response.ErrorSwaggerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorSwaggerResponse'
+      summary: Enforce password reset
       tags:
       - Users
 swagger: "2.0"

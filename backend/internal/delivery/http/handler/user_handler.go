@@ -24,7 +24,8 @@ func New(usecase *uc.Usecase, oauthUsecase uc.OAuthUsecase) *UserHandler {
 }
 
 // GetUsers godoc
-// @Summary      Get all users
+// @Summary      Administrative user list
+// @Description  Retrieve a paginated list of all registered users in the application.
 // @Tags         Users
 // @Produce      json
 // @Success      200 {object} response.SuccessUserResponse
@@ -44,7 +45,8 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 }
 
 // GetUser godoc
-// @Summary      Get user by ID
+// @Summary      Retrieve user profile
+// @Description  Fetch comprehensive details of a specific user account by their unique identifier.
 // @Tags         Users
 // @Produce      json
 // @Param        id   path      int  true  "User ID"
@@ -69,7 +71,8 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 }
 
 // CreateUser godoc
-// @Summary      Create user
+// @Summary      Provision new user account
+// @Description  Create a new user entry with assigned roles and initial status (Admin privileged).
 // @Tags         Users
 // @Accept       json
 // @Produce      json
@@ -112,7 +115,8 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 }
 
 // Login godoc
-// @Summary      Login user
+// @Summary      Authenticate user session
+// @Description  Validate user credentials and generate a secure JWT access token for platform interaction.
 // @Tags         Users
 // @Accept       json
 // @Produce      json
@@ -142,7 +146,8 @@ func (h *UserHandler) Login(c *gin.Context) {
 }
 
 // UpdateUser godoc
-// @Summary      Update user
+// @Summary      Update user information
+// @Description  Modify existing user account details and preferences.
 // @Tags         Users
 // @Accept       json
 // @Produce      json
@@ -175,7 +180,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 }
 
 // DeleteUser godoc
-// @Summary      Delete user
+// @Summary      Deactivate user account
+// @Description  Permanently remove a user identity and access from the system.
 // @Tags         Users
 // @Produce      json
 // @Param        id   path      int  true  "User ID"
@@ -240,4 +246,38 @@ func (h *UserHandler) GoogleCallback(c *gin.Context) {
 	// Redirect to frontend with token as query param or set in cookie
 	frontendURL := "http://localhost:3000/oauth/callback?token=" + token
 	c.Redirect(http.StatusTemporaryRedirect, frontendURL)
+}
+
+// ResetPassword godoc
+// @Summary      Enforce password reset
+// @Description  Administrative utility to securely reset a user's password following ISO security standards.
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "User ID"
+// @Param        body body user.PasswordResetRequest true "Reset payload"
+// @Success      200 {object} response.SuccessSingleUserResponse
+// @Failure      400 {object} response.ErrorSwaggerResponse
+// @Failure      403 {object} response.ErrorSwaggerResponse
+// @Failure      500 {object} response.ErrorSwaggerResponse
+// @Router       /users/{id}/reset-password [post]
+func (h *UserHandler) ResetPassword(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.Error(apperror.BadRequest("invalid user id", err))
+		return
+	}
+
+	var req user.PasswordResetRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "422", "invalid request", err.Error())
+		return
+	}
+
+	if err := h.usecase.ResetPassword(id, req.Password); err != nil {
+		c.Error(err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "password reset successfully", nil)
 }

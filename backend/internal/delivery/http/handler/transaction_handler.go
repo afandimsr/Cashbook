@@ -23,8 +23,8 @@ func NewTransactionHandler(usecase uc.Usecase) *TransactionHandler {
 }
 
 // GetTransactions godoc
-// @Summary      Get transactions
-// @Description  Get transactions for the authenticated user with pagination and search
+// @Summary      Browse financial transactions
+// @Description  Retrieve a detailed list of financial transactions with support for pagination and business filters like category, date range, and type (income/expense).
 // @Tags         Transactions
 // @Produce      json
 // @Param        page   query     int     false  "Page number"
@@ -71,8 +71,8 @@ func (h *TransactionHandler) GetTransactions(c *gin.Context) {
 }
 
 // CreateTransaction godoc
-// @Summary      Create transaction
-// @Description  Create a new transaction for the authenticated user
+// @Summary      Record a new transaction
+// @Description  Log a new financial entry (income or expense) to track personal cash flow.
 // @Tags         Transactions
 // @Accept       json
 // @Produce      json
@@ -136,8 +136,8 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 }
 
 // GetSummary godoc
-// @Summary      Get dashboard summary
-// @Description  Get total balance, income, and expenses for the authenticated user
+// @Summary      Dashboard financial health summary
+// @Description  Calculate and retrieve the current total balance, aggregate income, and aggregate expenses for an immediate overview of financial status.
 // @Tags         Transactions
 // @Produce      json
 // @Success      200 {object} response.SuccessSummaryResponse
@@ -157,8 +157,8 @@ func (h *TransactionHandler) GetSummary(c *gin.Context) {
 }
 
 // UpdateTransaction godoc
-// @Summary      Update transaction
-// @Description  Update an existing transaction
+// @Summary      Amend a financial record
+// @Description  Update the details of an existing transaction to ensure ledger accuracy.
 // @Tags         Transactions
 // @Accept       json
 // @Produce      json
@@ -229,8 +229,8 @@ func (h *TransactionHandler) UpdateTransaction(c *gin.Context) {
 }
 
 // DeleteTransaction godoc
-// @Summary      Delete transaction
-// @Description  Delete an existing transaction
+// @Summary      Remove a financial record
+// @Description  Permanently delete a transaction from the personal finance history.
 // @Tags         Transactions
 // @Produce      json
 // @Param        id   path      int  true  "Transaction ID"

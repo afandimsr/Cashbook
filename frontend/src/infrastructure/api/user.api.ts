@@ -55,4 +55,13 @@ export class UserRepositoryImpl implements IUserRepository {
             throw new Error(`Failed to delete user: ${message}`);
         }
     }
+
+    async resetPassword(id: string, password: string): Promise<void> {
+        try {
+            await apiClient.post(`/users/${id}/reset-password`, { password });
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            throw new Error(`Failed to reset password: ${message}`);
+        }
+    }
 }
