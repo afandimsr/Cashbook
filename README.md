@@ -11,6 +11,7 @@ A modern, full-stack personal finance management application built with **Go (Go
 - **Recurring Transactions**: Automate your repetitive bills and subscriptions.
 - **Financial Reports**: Interactive charts and data breakdown for spending analysis (powered by Recharts).
 - **Dual Authentication**: Traditional Username/Password login and Google OAuth integration.
+- **Progressive Web App (PWA)**: Installable on mobile and desktop devices with offline support and fast loading.
 
 ## 🛠️ Technology Stack
 
@@ -27,6 +28,7 @@ A modern, full-stack personal finance management application built with **Go (Go
 - **Material UI (MUI) v6**: Professional component library for high-end aesthetics.
 - **Zustand**: Lightweight, scalable state management.
 - **Vite**: Ultra-fast build tool and development server.
+- **Vite PWA**: Professional PWA integration for installation and offline support.
 - **Recharts**: Modular charting components.
 
 ## 📁 System Architecture
@@ -96,6 +98,22 @@ CashBook/
 ## 🔑 Demo Access
 - **Default Admin**: `admin@example.com` / `admin123`
 - **OAuth**: Click the "Sign in with Google" button (requires valid credentials in backend `.env`).
+
+## 🐳 Docker Deployment
+
+The application is fully containerized with Docker Compose for easy deployment.
+
+### Rebuild and Deploy
+To rebuild the entire stack (including any PWA changes):
+```bash
+docker compose --env-file ./frontend/.env up -d --build
+```
+
+### Specific Service Update
+To update only the frontend (e.g., for PWA updates):
+```bash
+docker compose --env-file ./frontend/.env up -d --build frontend
+```
 
 ## 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
