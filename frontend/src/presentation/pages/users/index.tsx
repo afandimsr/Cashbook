@@ -17,6 +17,7 @@ import {
 import { useUserStore } from '../../../state/userStore';
 import { useAuthStore } from '../../../state/authStore';
 import { UserFormDialog } from './UserFormDialog';
+import { ResetPasswordDialog } from './ResetPasswordDialog';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import type { User } from '../../../domain/entities/User';
 
@@ -26,10 +27,11 @@ import { UserTableActions } from './components/UserTableActions';
 import { UserTableSkeleton } from './components/UserTableSkeleton';
 
 export const UserListPage: React.FC = () => {
-    const { users, isLoading, fetchUsers, addUser, editUser, removeUser } = useUserStore();
+    const { users, isLoading, fetchUsers, addUser, editUser, removeUser, resetPassword } = useUserStore();
     const { user: currentUser } = useAuthStore();
     const [openForm, setOpenForm] = useState(false);
     const [openConfirm, setOpenConfirm] = useState(false);
+    const [openReset, setOpenReset] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [snack, setSnack] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ open: false, message: '', severity: 'success' });
@@ -53,6 +55,11 @@ export const UserListPage: React.FC = () => {
     const handleEdit = (user: User) => {
         setSelectedUser(user);
         setOpenForm(true);
+    };
+
+    const handleResetPassword = (user: User) => {
+        setSelectedUser(user);
+        setOpenReset(true);
     };
 
     const handleDelete = (user: User) => {
@@ -87,6 +94,13 @@ export const UserListPage: React.FC = () => {
             throw err;
         } finally {
             setOpenConfirm(false);
+        }
+    };
+
+    const handleDoResetPassword = async (password: string) => {
+        if (selectedUser) {
+            await resetPassword(selectedUser.id, password);
+            setSnack({ open: true, message: 'Password reset successfully', severity: 'success' });
         }
     };
 
@@ -170,6 +184,7 @@ export const UserListPage: React.FC = () => {
                                             user={user}
                                             onEdit={handleEdit}
                                             onDelete={handleDelete}
+                                            onResetPassword={handleResetPassword}
                                         />
                                     )}
                                 </TableCell>
@@ -193,6 +208,13 @@ export const UserListPage: React.FC = () => {
                 user={selectedUser}
                 onClose={() => setOpenForm(false)}
                 onSave={handleSave}
+            />
+
+            <ResetPasswordDialog
+                open={openReset}
+                user={selectedUser}
+                onClose={() => setOpenReset(false)}
+                onReset={handleDoResetPassword}
             />
 
             <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack({ ...snack, open: false })}>

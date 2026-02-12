@@ -5,7 +5,8 @@ import { GetUsersUseCase } from '../application/user/GetUsersUseCase/GetUsersUse
 import { CreateUserUseCase } from '../application/user/Create/CreateUserUseCase';
 import { UpdateUserUseCase } from '../application/user/UpdateUserUseCase';
 import { DeleteUserUseCase } from '../application/user/DeleteUserUseCase';
-import type {CreateUserRequest} from '../application/user/Create/CreateUserRequest'
+import { ResetPasswordUseCase } from '../application/user/ResetPasswordUseCase';
+import type { CreateUserRequest } from '../application/user/Create/CreateUserRequest'
 
 interface UserState {
     users: User[];
@@ -15,6 +16,7 @@ interface UserState {
     addUser: (user: Omit<CreateUserRequest, 'id'>) => Promise<void>;
     editUser: (id: string, user: Partial<User>) => Promise<void>;
     removeUser: (id: string) => Promise<void>;
+    resetPassword: (id: string, password: string) => Promise<void>;
 }
 
 // Dependency Injection
@@ -23,6 +25,7 @@ const getUsersUseCase = new GetUsersUseCase(userRepo);
 const createUserUseCase = new CreateUserUseCase(userRepo);
 const updateUserUseCase = new UpdateUserUseCase(userRepo);
 const deleteUserUseCase = new DeleteUserUseCase(userRepo);
+const resetPasswordUseCase = new ResetPasswordUseCase(userRepo);
 
 export const useUserStore = create<UserState>((set, get) => ({
     users: [],
@@ -33,7 +36,7 @@ export const useUserStore = create<UserState>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const users = await getUsersUseCase.execute();
-            
+
             // map users to match User entity if needed
             const userMapper = users.map(user => {
                 return {
@@ -75,6 +78,16 @@ export const useUserStore = create<UserState>((set, get) => ({
         try {
             await deleteUserUseCase.execute(id);
             await get().fetchUsers();
+        } catch (err: any) {
+            set({ error: err.message, isLoading: false });
+            throw err;
+        }
+    },
+    resetPassword: async (id, password) => {
+        set({ isLoading: true, error: null });
+        try {
+            await resetPasswordUseCase.execute(id, password);
+            set({ isLoading: false });
         } catch (err: any) {
             set({ error: err.message, isLoading: false });
             throw err;

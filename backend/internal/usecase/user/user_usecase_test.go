@@ -102,3 +102,61 @@ func TestCreate(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestResetPassword(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	usecase := uc.New(mockRepo, nil)
+
+	t.Run("Success", func(t *testing.T) {
+		id := int64(1)
+		newPassword := "StrongPass123!"
+		mockUser := user.User{ID: id, Name: "Test", Email: "test@example.com"}
+
+		mockRepo.On("FindByID", id).Return(mockUser, nil)
+		mockRepo.On("Update", mock.AnythingOfType("user.User")).Return(nil)
+
+		err := usecase.ResetPassword(id, newPassword)
+
+		assert.NoError(t, err)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("WeakPassword", func(t *testing.T) {
+		err := usecase.ResetPassword(1, "weak")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "at least 8 characters")
+	})
+}
+
+func TestValidatePassword(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	usecase := uc.New(mockRepo, nil)
+
+	tests := []struct {
+		name     string
+		password string
+		isValid  bool
+	}{
+		{"Valid", "StrongPass123!", true},
+		{"TooShort", "Sh1!", false},
+		{"NoUpper", "lowercase123!", false},
+		{"NoLower", "UPPERCASE123!", false},
+		{"NoNumber", "NoNumberPass!", false},
+		{"NoSymbol", "NoSymbolPass123", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.isValid {
+				mockRepo.On("FindByID", int64(1)).Return(user.User{}, nil).Once()
+				mockRepo.On("Update", mock.AnythingOfType("user.User")).Return(nil).Once()
+			}
+			err := usecase.ResetPassword(1, tt.password)
+			if tt.isValid {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+			}
+		})
+	}
+}

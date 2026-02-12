@@ -21,6 +21,10 @@ type LoginResponse struct {
 	Token string `json:"token"`
 }
 
+type PasswordResetRequest struct {
+	Password string `json:"password" binding:"required,min=8"`
+}
+
 type OauthState struct {
 	ID            string     `json:"id"`
 	State         string     `json:"state"`

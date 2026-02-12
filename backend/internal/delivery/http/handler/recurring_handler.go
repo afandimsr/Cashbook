@@ -20,8 +20,8 @@ func NewRecurringHandler(usecase uc.Usecase) *RecurringHandler {
 }
 
 // GetRecurring godoc
-// @Summary      Get recurring transactions
-// @Description  Get all recurring transactions for the authenticated user
+// @Summary      Browse recurring automation templates
+// @Description  Retrieve all active recurring transaction templates set up for automated financial tracking.
 // @Tags         Recurring
 // @Produce      json
 // @Success      200 {object} response.SuccessRecurringResponse
@@ -41,8 +41,8 @@ func (h *RecurringHandler) GetRecurring(c *gin.Context) {
 }
 
 // CreateRecurring godoc
-// @Summary      Create recurring transaction
-// @Description  Create a new recurring transaction template
+// @Summary      Create automation template
+// @Description  Define a new recurring transaction pattern to automate repetitive financial entries like bills or subscriptions.
 // @Tags         Recurring
 // @Accept       json
 // @Produce      json
@@ -71,8 +71,8 @@ func (h *RecurringHandler) CreateRecurring(c *gin.Context) {
 }
 
 // DeleteRecurring godoc
-// @Summary      Delete recurring transaction
-// @Description  Delete an existing recurring transaction template
+// @Summary      Discard automation template
+// @Description  Permanently remove a recurring transaction pattern from the automation schedule.
 // @Tags         Recurring
 // @Produce      json
 // @Param        id   path      int  true  "Recurring Transaction ID"
@@ -98,8 +98,8 @@ func (h *RecurringHandler) DeleteRecurring(c *gin.Context) {
 }
 
 // ProcessDue godoc
-// @Summary      Process due recurring transactions
-// @Description  Trigger the manual processing of due recurring transactions into transactions
+// @Summary      Execute pending automations
+// @Description  Manually trigger the processing of due recurring templates to generate actual financial transactions for the current period.
 // @Tags         Recurring
 // @Produce      json
 // @Success      200 {object} response.SuccessResponse

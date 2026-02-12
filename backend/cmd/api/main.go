@@ -2,9 +2,9 @@ package main
 
 import "github.com/afandimsr/cashbook-backend/internal/bootstrap"
 
-// @title           Go Gin API
+// @title           CashBook - Personal Finance API
 // @version         1.0
-// @description     Clean Architecture Go Gin API
+// @description     API Server for CashBook Personal Finance Manager. This API handles transactions, budgeting, category management, and financial reporting.
 // @termsOfService  http://swagger.io/terms/
 
 // @contact.name   Afandi

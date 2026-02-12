@@ -22,8 +22,8 @@ func NewCategoryHandler(usecase uc.Usecase) *CategoryHandler {
 }
 
 // GetCategories godoc
-// @Summary      Get all categories
-// @Description  Get all categories for the authenticated user
+// @Summary      List financial categories
+// @Description  Retrieve all personalized spending and income categories available for the user.
 // @Tags         Categories
 // @Produce      json
 // @Success      200 {object} response.SuccessCategoryResponse
@@ -43,8 +43,8 @@ func (h *CategoryHandler) GetCategories(c *gin.Context) {
 }
 
 // CreateCategory godoc
-// @Summary      Create category
-// @Description  Create a new category for the authenticated user
+// @Summary      Create a new category
+// @Description  Define a new classification category with custom styling (color/icon) for transaction organization.
 // @Tags         Categories
 // @Accept       json
 // @Produce      json
@@ -72,8 +72,8 @@ func (h *CategoryHandler) CreateCategory(c *gin.Context) {
 }
 
 // UpdateCategory godoc
-// @Summary      Update category
-// @Description  Update an existing category
+// @Summary      Modify category details
+// @Description  Update the properties of an existing category, such as name or visual identifiers.
 // @Tags         Categories
 // @Accept       json
 // @Produce      json
@@ -107,8 +107,8 @@ func (h *CategoryHandler) UpdateCategory(c *gin.Context) {
 }
 
 // DeleteCategory godoc
-// @Summary      Delete category
-// @Description  Delete an existing category
+// @Summary      Archive category
+// @Description  Permanently remove a transaction category from the user's profile.
 // @Tags         Categories
 // @Produce      json
 // @Param        id   path      int  true  "Category ID"

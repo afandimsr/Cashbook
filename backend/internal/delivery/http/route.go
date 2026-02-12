@@ -34,6 +34,7 @@ func RegisterRoutes(
 		users.GET("/:id", userHandler.GetUser)
 		users.PUT("/:id", userHandler.UpdateUser)
 		users.DELETE("/:id", userHandler.DeleteUser)
+		users.POST("/:id/reset-password", userHandler.ResetPassword)
 	}
 
 	// category routes

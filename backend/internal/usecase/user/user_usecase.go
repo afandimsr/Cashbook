@@ -140,3 +140,62 @@ func (u *Usecase) Login(email, password string) (string, error) {
 
 	return token, nil
 }
+
+func (u *Usecase) ResetPassword(id int64, newPassword string) error {
+	if err := u.validatePassword(newPassword); err != nil {
+		return err
+	}
+
+	existingUser, err := u.repo.FindByID(id)
+	if err != nil {
+		return err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return apperror.Internal(err)
+	}
+
+	existingUser.Password = string(hashedPassword)
+
+	if err := u.repo.Update(existingUser); err != nil {
+		return apperror.Internal(err)
+	}
+
+	return nil
+}
+
+func (u *Usecase) validatePassword(password string) error {
+	if len(password) < 8 {
+		return apperror.BadRequest("password must be at least 8 characters long", nil)
+	}
+
+	var hasUpper, hasLower, hasNumber, hasSymbol bool
+	for _, char := range password {
+		switch {
+		case 'A' <= char && char <= 'Z':
+			hasUpper = true
+		case 'a' <= char && char <= 'z':
+			hasLower = true
+		case '0' <= char && char <= '9':
+			hasNumber = true
+		case char == '!' || char == '@' || char == '#' || char == '$' || char == '%' || char == '^' || char == '&' || char == '*' || char == '(' || char == ')' || char == '-' || char == '_' || char == '+' || char == '=':
+			hasSymbol = true
+		}
+	}
+
+	if !hasUpper {
+		return apperror.BadRequest("password must contain at least one uppercase letter", nil)
+	}
+	if !hasLower {
+		return apperror.BadRequest("password must contain at least one lowercase letter", nil)
+	}
+	if !hasNumber {
+		return apperror.BadRequest("password must contain at least one number", nil)
+	}
+	if !hasSymbol {
+		return apperror.BadRequest("password must contain at least one special character", nil)
+	}
+
+	return nil
+}

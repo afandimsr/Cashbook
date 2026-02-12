@@ -21,8 +21,8 @@ func NewBudgetHandler(usecase uc.Usecase) *BudgetHandler {
 }
 
 // GetBudgets godoc
-// @Summary      Get budgets
-// @Description  Get budgets for a specific month and year
+// @Summary      Track budget progress
+// @Description  Retrieve monthly budget targets and current spending progress for a specific period to maintain financial discipline.
 // @Tags         Budgets
 // @Produce      json
 // @Param        month  query     int  false  "Month (1-12)"
@@ -51,8 +51,8 @@ func (h *BudgetHandler) GetBudgets(c *gin.Context) {
 }
 
 // SetBudget godoc
-// @Summary      Set or update budget
-// @Description  Set or update a budget for a category, month, and year
+// @Summary      Establish category budget
+// @Description  Set or update a monthly spending limit for a specific financial category.
 // @Tags         Budgets
 // @Accept       json
 // @Produce      json
