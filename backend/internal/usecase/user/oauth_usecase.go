@@ -88,6 +88,7 @@ func (u *oauthUsecase) HandleGoogleCallback(code, state, ip, userAgent string) (
 	// Note: IP check can be flaky if user switches networks (WiFi -> 4G).
 	// For strict security, we enforce it. For better UX, might consider relaxing it or logging warning.
 	// Given the user provided the design with IP binding, I will enforce it.
+	// 4. Verify IP and User Agent Binding
 	currentIPHash := hashString(ip)
 	currentUAHash := hashString(userAgent)
 

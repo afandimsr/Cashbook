@@ -152,7 +152,7 @@ export const LoginPageNew: React.FC = () => {
     };
 
     const handleGoogleLogin = () => {
-        window.location.href = 'http://localhost:8181/api/v1/auth/google/login';
+        window.location.href = '/api/v1/auth/google/login';
     };
 
     return (
@@ -296,6 +296,7 @@ export const LoginPageNew: React.FC = () => {
                         </Box>
 
                         <GoogleButton
+                            type="button"
                             fullWidth
                             startIcon={
                                 <svg width="20" height="20" viewBox="0 0 24 24">

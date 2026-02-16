@@ -12,7 +12,7 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.Error(apperror.Unauthorized("authorization header required", nil))
+			c.Error(apperror.Unauthorized("Access Denied, Login Required", nil))
 			c.Abort()
 			return
 		}

@@ -4,7 +4,7 @@
  */
 
 export const config = {
-    API_URL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+    API_URL: import.meta.env.VITE_API_URL || '/api/v1',
     APP_TITLE: import.meta.env.VITE_APP_TITLE || 'CashBook',
     APP_VERSION: '1.13.0', // Standard application version
     IS_DEV: import.meta.env.DEV,

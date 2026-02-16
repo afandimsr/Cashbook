@@ -28,6 +28,11 @@ func Run() {
 	cfg := config.Load()
 	jwt.SetSecret(cfg.JWTSecret)
 
+	// set gin mode
+	if cfg.AppEnv == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	db, err := config.NewPostgreSQL(cfg.DB)
 	if err != nil {
 		log.Fatal(err)
@@ -62,6 +67,7 @@ func Run() {
 	recurringHandler := handler.NewRecurringHandler(recurringUsecase)
 
 	r := gin.Default()
+	r.SetTrustedProxies(nil) // Trust proxies for ClientIP() to work behind Nginx
 	r.Use(
 		cors.New(middleware.Cors(cfg)),
 		apm.GinMiddleware(), // Gin Elastic APM
@@ -69,7 +75,9 @@ func Run() {
 	)
 
 	RegisterRoutes(r, userHandler, categoryHandler, transactionHandler, budgetHandler, reportHandler, recurringHandler)
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	if gin.Mode() != gin.ReleaseMode {
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 
 	log.Println("Running on port", cfg.AppPort)
 	r.Run(":" + cfg.AppPort)
