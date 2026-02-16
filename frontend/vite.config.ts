@@ -42,6 +42,9 @@ export default defineConfig({
           },
         ],
       },
+      workbox: {
+        navigateFallbackDenylist: [/^\/api/, /^\/swagger/],
+      },
       devOptions: {
         enabled: true,
       },

@@ -6,9 +6,9 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: go-backend
-    ports:
-      - "8181:8181"  # Mapping Port Host:Container (Host 8181 sesuai env frontend)
+    container_name: go-cashbook-backend
+    expose:
+      - "8181"  # Internal service port (not accessible from host)
     env_file:
       - ./backend/.env
     networks:
@@ -24,7 +24,7 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL}
         VITE_APP_TITLE: ${VITE_APP_TITLE}
-    container_name: react-frontend
+    container_name: react-cashbook-frontend
     ports:
       - "3000:80"
     # Kita load file .env frontend agar docker-compose bisa membaca valuenya
