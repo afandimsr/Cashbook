@@ -48,7 +48,7 @@ func Load() *Config {
 	_ = godotenv.Load()
 
 	cfg := &Config{
-		AppVersion:    "1.14.0",
+		AppVersion:    "1.14.1",
 		AppName:       getEnv("APP_NAME", "go-app"),
 		AppPort:       getEnv("APP_PORT", "8080"),
 		AppEnv:        getEnv("APP_ENV", "production"),
