@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/afandimsr/cashbook-backend/internal/config"
 	"github.com/afandimsr/cashbook-backend/internal/delivery/http/response"
 	"github.com/afandimsr/cashbook-backend/internal/domain/apperror"
 	"github.com/afandimsr/cashbook-backend/internal/domain/user"
@@ -12,12 +13,14 @@ import (
 )
 
 type UserHandler struct {
+	cfg          *config.Config
 	usecase      *uc.Usecase
 	oauthUsecase uc.OAuthUsecase
 }
 
-func New(usecase *uc.Usecase, oauthUsecase uc.OAuthUsecase) *UserHandler {
+func New(cfg *config.Config, usecase *uc.Usecase, oauthUsecase uc.OAuthUsecase) *UserHandler {
 	return &UserHandler{
+		cfg:          cfg,
 		usecase:      usecase,
 		oauthUsecase: oauthUsecase,
 	}
@@ -207,7 +210,14 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	response.Success(c, http.StatusOK, "user deleted", nil)
 }
 
-// GoogleLogin redirects to Google Auth URL
+// GoogleLogin godoc
+// @Summary      Initiate Google OAuth2 flow
+// @Description  Redirects the client to Google's OAuth2 authorization page to begin the authentication process.
+// @Tags         Auth
+// @Produce      json
+// @Success      307 "Temporary Redirect to Google Auth URL"
+// @Failure      500 {object} response.ErrorSwaggerResponse
+// @Router       /auth/google/login [get]
 func (h *UserHandler) GoogleLogin(c *gin.Context) {
 	ip := c.ClientIP()
 	userAgent := c.Request.UserAgent()
@@ -220,7 +230,17 @@ func (h *UserHandler) GoogleLogin(c *gin.Context) {
 	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
-// GoogleCallback handles the callback from Google
+// GoogleCallback godoc
+// @Summary      Google OAuth2 callback
+// @Description  Handles the redirection from Google after user authorization, exchanges code for token, and authenticates user.
+// @Tags         Auth
+// @Produce      json
+// @Param        code   query     string  true  "OAuth2 Code"
+// @Param        state  query     string  true  "OAuth2 State"
+// @Success      307 "Temporary Redirect to Frontend"
+// @Failure      400 {object} response.ErrorSwaggerResponse
+// @Failure      500 {object} response.ErrorSwaggerResponse
+// @Router       /auth/google/callback [get]
 func (h *UserHandler) GoogleCallback(c *gin.Context) {
 	code := c.Query("code")
 	state := c.Query("state")
@@ -235,16 +255,14 @@ func (h *UserHandler) GoogleCallback(c *gin.Context) {
 	token, err := h.oauthUsecase.HandleGoogleCallback(code, state, ip, userAgent)
 	if err != nil {
 		c.Error(err)
-		// Redirect to frontend error page or return JSON error?
-		// Usually callback endpoint redirects to frontend.
-		// If error, redirect to login with error param.
-		frontendErrorURL := "http://localhost:3000/login?error=" + err.Error()
+		// Redirect to login with error param using dynamic ClientAuthURL
+		frontendErrorURL := h.cfg.FrontendURL + "/login?error=" + err.Error()
 		c.Redirect(http.StatusTemporaryRedirect, frontendErrorURL)
 		return
 	}
 
-	// Redirect to frontend with token as query param or set in cookie
-	frontendURL := "http://localhost:3000/oauth/callback?token=" + token
+	// Redirect to frontend with token as query param using dynamic ClientAuthURL
+	frontendURL := h.cfg.FrontendURL + "/oauth/callback?token=" + token
 	c.Redirect(http.StatusTemporaryRedirect, frontendURL)
 }
 

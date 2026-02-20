@@ -14,6 +14,7 @@ type Config struct {
 	AppEnv             string
 	JWTSecret          string
 	ClientAuthURL      string
+	FrontendURL        string
 	CorsAllowedOrigins string
 
 	GoogleClientID     string
@@ -54,6 +55,7 @@ func Load() *Config {
 		AppEnv:        getEnv("APP_ENV", "production"),
 		JWTSecret:     getEnv("JWT_SECRET", "default-secret"),
 		ClientAuthURL: getEnv("CLIENT_AUTH_URL", ""),
+		FrontendURL:   getEnv("FRONTEND_URL", ""),
 
 		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),

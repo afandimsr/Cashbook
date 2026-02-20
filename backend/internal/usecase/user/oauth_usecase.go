@@ -133,6 +133,7 @@ func (u *oauthUsecase) HandleGoogleCallback(code, state, ip, userAgent string) (
 				Name:     googleUser.Name,
 				Email:    googleUser.Email,
 				GoogleID: googleUser.ID,
+				Roles:    []string{"USER"},
 				IsActive: true,
 			}
 			err = u.userRepo.Save(newUser)

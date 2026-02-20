@@ -59,7 +59,7 @@ func Run() {
 	reportUsecase := reportUC.New(transactionRepository)
 	recurringUsecase := recurringUC.New(recurringRepository, transactionRepository)
 
-	userHandler := handler.New(userUsecase, oauthUsecase)
+	userHandler := handler.New(cfg, userUsecase, oauthUsecase)
 	categoryHandler := handler.NewCategoryHandler(categoryUsecase)
 	transactionHandler := handler.NewTransactionHandler(transactionUsecase)
 	budgetHandler := handler.NewBudgetHandler(budgetUsecase)

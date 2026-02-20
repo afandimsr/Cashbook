@@ -244,6 +244,53 @@ info:
   title: CashBook - Personal Finance API
   version: "1.0"
 paths:
+  /auth/google/callback:
+    get:
+      description: Handles the redirection from Google after user authorization, exchanges
+        code for token, and authenticates user.
+      parameters:
+      - description: OAuth2 Code
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: OAuth2 State
+        in: query
+        name: state
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "307":
+          description: Temporary Redirect to Frontend
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorSwaggerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorSwaggerResponse'
+      summary: Google OAuth2 callback
+      tags:
+      - Auth
+  /auth/google/login:
+    get:
+      description: Redirects the client to Google's OAuth2 authorization page to begin
+        the authentication process.
+      produces:
+      - application/json
+      responses:
+        "307":
+          description: Temporary Redirect to Google Auth URL
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorSwaggerResponse'
+      summary: Initiate Google OAuth2 flow
+      tags:
+      - Auth
   /budgets:
     get:
       description: Retrieve monthly budget targets and current spending progress for
