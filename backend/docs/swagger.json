@@ -13,6 +13,74 @@
     "host": "localhost:8181",
     "basePath": "/api/v1",
     "paths": {
+        "/auth/google/callback": {
+            "get": {
+                "description": "Handles the redirection from Google after user authorization, exchanges code for token, and authenticates user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Google OAuth2 callback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "OAuth2 Code",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "OAuth2 State",
+                        "name": "state",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "307": {
+                        "description": "Temporary Redirect to Frontend"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorSwaggerResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorSwaggerResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/google/login": {
+            "get": {
+                "description": "Redirects the client to Google's OAuth2 authorization page to begin the authentication process.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Initiate Google OAuth2 flow",
+                "responses": {
+                    "307": {
+                        "description": "Temporary Redirect to Google Auth URL"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorSwaggerResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/budgets": {
             "get": {
                 "description": "Retrieve monthly budget targets and current spending progress for a specific period to maintain financial discipline.",

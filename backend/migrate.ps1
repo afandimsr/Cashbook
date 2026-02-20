@@ -1,6 +1,6 @@
 param (
     [Parameter(Mandatory = $true)]
-    [ValidateSet("up", "down", "force")]
+    [ValidateSet("up", "down", "force", "swag")]
     [string]$Action,
 
     [Parameter(Mandatory = $false)]
@@ -60,7 +60,10 @@ if ($Action -eq "down" -and $APP_ENV -eq "production" -and -not $ConfirmInput) {
 # Execute migrate command
 $Cmd = "migrate -database ""$MIGRATE_URL"" -path migrations"
 
-if ($Action -eq "force") {
+if ($Action -eq "swag") {
+    swag init -g cmd/api/main.go -o docs
+}
+elseif ($Action -eq "force") {
     if (-not $Version) {
         Write-Error "Version parameter is required for force action"
         exit 1
