@@ -145,7 +145,17 @@ export const LoginPageNew: React.FC = () => {
         e.preventDefault();
         try {
             await login(email, password);
-            navigate('/dashboard');
+            // Check if 2FA is required (store will be updated by now)
+            const state = useAuthStore.getState();
+
+            //  get value of tempToken in jwt token 
+            if (state.requires2FA && state.tempUser?.purpose === "setup") {
+                navigate('/login/2fa-register');
+            } else if (state.requires2FA && state.tempUser?.purpose === "verify") {
+                navigate('/login/2fa-verify');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err) {
             // Error managed by store
         }

@@ -9,6 +9,7 @@ import ReceiptIcon from '@mui/icons-material/Receipt';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import SecurityIcon from '@mui/icons-material/Security';
 
 export interface NavItem {
     text: string;
@@ -68,6 +69,11 @@ export const menuItems: NavItem[] = [
                 text: 'Notifications',
                 icon: <NotificationsIcon />,
                 path: '/dashboard/settings/notifications'
+            },
+            {
+                text: '2FA',
+                icon: <SecurityIcon />,
+                path: '/dashboard/settings/2fa'
             }
         ]
     }

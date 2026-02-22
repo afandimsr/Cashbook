@@ -37,6 +37,17 @@ services:
       - my_develop_network
     restart: always
 
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - ./backend/migrations:/migrations
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://${USER_DB}:${PASSWORD_DB}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable",
+      "up"
+    ]
+    networks:
+      - my_develop_network
 # ... (Definisi networks sama seperti sebelumnya)
 networks:
   my_develop_network:

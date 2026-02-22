@@ -45,9 +45,52 @@ func (m *MockUserRepository) Update(u user.User) error {
 	return args.Error(0)
 }
 
+func (m *MockUserRepository) DisableTOTP(u user.User) error {
+	args := m.Called(u)
+	return args.Error(0)
+}
+
 func (m *MockUserRepository) Delete(id int64) error {
 	args := m.Called(id)
 	return args.Error(0)
+}
+
+func (m *MockUserRepository) EnableTOTP(u user.User) error {
+	args := m.Called(u)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) UpdateTOTPSecret(u user.User) error {
+	args := m.Called(u)
+	return args.Error(0)
+}
+
+// MockMFASettingsRepository is a mock implementation of user.MFASettingsRepository
+type MockMFASettingsRepository struct {
+	mock.Mock
+}
+
+func (m *MockMFASettingsRepository) Get() (*user.MFASettings, error) {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*user.MFASettings), args.Error(1)
+}
+
+func (m *MockMFASettingsRepository) Upsert(settings user.MFASettings) error {
+	args := m.Called(settings)
+	return args.Error(0)
+}
+
+// MockAuthService is a mock implementation of user.AuthService
+type MockAuthService struct {
+	mock.Mock
+}
+
+func (m *MockAuthService) Login(email, password string) (bool, error) {
+	args := m.Called(email, password)
+	return args.Bool(0), args.Error(1)
 }
 
 func TestGetByID(t *testing.T) {
@@ -159,4 +202,102 @@ func TestValidatePassword(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLoginWith2FA(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	mockAuth := new(MockAuthService)
+	mockMFA := new(MockMFASettingsRepository)
+	usecase := uc.New(mockRepo, mockAuth)
+	usecase.SetMFASettingsRepo(mockMFA)
+
+	t.Run("Success - 2FA Setup Required (TOTPSecret empty)", func(t *testing.T) {
+		email := "test@example.com"
+		password := "password123"
+		mockUser := user.User{
+			ID:          1,
+			Name:        "Test User",
+			Email:       email,
+			Password:    "anypassword",
+			IsActive:    true,
+			TOTPSecret:  "",
+			TOTPEnabled: false,
+		}
+
+		mockAuth.On("Login", email, password).Return(true, nil)
+		mockRepo.On("FindByEmail", email).Return(mockUser, nil)
+
+		response, err := usecase.Login(email, password)
+
+		assert.NoError(t, err)
+		assert.True(t, response.Requires2FA)
+		assert.NotEmpty(t, response.TempToken)
+		assert.Empty(t, response.Token)
+		mockRepo.AssertExpectations(t)
+		mockAuth.AssertExpectations(t)
+	})
+
+	t.Run("Success - 2FA Verification Required (TOTPEnabled)", func(t *testing.T) {
+		email := "test2@example.com"
+		password := "password123"
+		mockUser := user.User{
+			ID:          2,
+			Name:        "Test User 2",
+			Email:       email,
+			Password:    "anypassword",
+			IsActive:    true,
+			TOTPSecret:  "JBSWY3DPEHPK3PXP",
+			TOTPEnabled: true,
+		}
+
+		mockAuth.On("Login", email, password).Return(true, nil)
+		mockRepo.On("FindByEmail", email).Return(mockUser, nil)
+
+		response, err := usecase.Login(email, password)
+
+		assert.NoError(t, err)
+		assert.True(t, response.Requires2FA)
+		assert.NotEmpty(t, response.TempToken)
+		assert.Empty(t, response.Token)
+		mockRepo.AssertExpectations(t)
+		mockAuth.AssertExpectations(t)
+	})
+
+	t.Run("Success - Normal Login (2FA enabled and verified)", func(t *testing.T) {
+		email := "test3@example.com"
+		password := "password123"
+		mockUser := user.User{
+			ID:          3,
+			Name:        "Test User 3",
+			Email:       email,
+			Password:    "anypassword",
+			IsActive:    true,
+			TOTPSecret:  "JBSWY3DPEHPK3PXP",
+			TOTPEnabled: true,
+		}
+
+		mockAuth.On("Login", email, password).Return(true, nil)
+		mockRepo.On("FindByEmail", email).Return(mockUser, nil)
+
+		response, err := usecase.Login(email, password)
+
+		assert.NoError(t, err)
+		assert.True(t, response.Requires2FA)
+		assert.NotEmpty(t, response.TempToken)
+		mockRepo.AssertExpectations(t)
+		mockAuth.AssertExpectations(t)
+	})
+
+	t.Run("Failure - Invalid Credentials", func(t *testing.T) {
+		email := "invalid@example.com"
+		password := "wrongpassword"
+
+		mockRepo.On("FindByEmail", email).Return(user.User{}, errors.New("user not found"))
+
+		_, err := usecase.Login(email, password)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid credentials")
+		mockRepo.AssertExpectations(t)
+	})
 }

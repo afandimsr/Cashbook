@@ -13,6 +13,244 @@
     "host": "localhost:8181",
     "basePath": "/api/v1",
     "paths": {
+        "/2fa/backup-codes": {
+            "post": {
+                "description": "Generate 10 one-time backup codes for account recovery.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "2FA"
+                ],
+                "summary": "Generate backup codes",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessSingleUserResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/2fa/backup/verify": {
+            "post": {
+                "description": "Use a one-time backup code to complete 2FA login.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "2FA"
+                ],
+                "summary": "Verify backup code during login",
+                "parameters": [
+                    {
+                        "description": "Backup verify payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.TwoFAVerifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessSingleUserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorSwaggerResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/2fa/disable": {
+            "delete": {
+                "description": "Turn off two-factor authentication for the current user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "2FA"
+                ],
+                "summary": "Disable 2FA",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessSingleUserResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/2fa/setup": {
+            "post": {
+                "description": "Generate TOTP secret and QR code for the authenticated user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "2FA"
+                ],
+                "summary": "Initialize 2FA setup",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessSingleUserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorSwaggerResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/2fa/setup/verify": {
+            "post": {
+                "description": "Validate the initial TOTP code to enable 2FA.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "2FA"
+                ],
+                "summary": "Confirm 2FA setup",
+                "parameters": [
+                    {
+                        "description": "Verify payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.TwoFASetupVerifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessSingleUserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorSwaggerResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/2fa/verify": {
+            "post": {
+                "description": "Validate TOTP code with temporary token to complete login.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "2FA"
+                ],
+                "summary": "Verify 2FA during login",
+                "parameters": [
+                    {
+                        "description": "Verify payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.TwoFAVerifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessSingleUserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorSwaggerResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/mfa-settings": {
+            "get": {
+                "description": "Retrieve the current system-wide MFA enforcement policy.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Get MFA settings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessSingleUserResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Toggle system-wide 2FA enforcement. Admin only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "Update MFA settings",
+                "parameters": [
+                    {
+                        "description": "MFA settings payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.updateMFARequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessSingleUserResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/google/callback": {
             "get": {
                 "description": "Handles the redirection from Google after user authorization, exchanges code for token, and authenticates user.",
@@ -377,7 +615,7 @@
         },
         "/login": {
             "post": {
-                "description": "Validate user credentials and generate a secure JWT access token for platform interaction.",
+                "description": "Validate user credentials. If 2FA is enabled, returns a temporary token for 2FA verification.",
                 "consumes": [
                     "application/json"
                 ],
@@ -385,7 +623,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Users"
+                    "Auth"
                 ],
                 "summary": "Authenticate user session",
                 "parameters": [
@@ -1211,6 +1449,14 @@
                 }
             }
         },
+        "handler.updateMFARequest": {
+            "type": "object",
+            "properties": {
+                "enforce_2fa": {
+                    "type": "boolean"
+                }
+            }
+        },
         "recurring_transaction.Frequency": {
             "type": "string",
             "enum": [
@@ -1480,6 +1726,34 @@
                 }
             }
         },
+        "user.TwoFASetupVerifyRequest": {
+            "type": "object",
+            "required": [
+                "code"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.TwoFAVerifyRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "temp_token"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 9,
+                    "minLength": 6
+                },
+                "temp_token": {
+                    "type": "string"
+                }
+            }
+        },
         "user.User": {
             "type": "object",
             "properties": {
@@ -1506,6 +1780,9 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "totp_enabled": {
+                    "type": "boolean"
                 }
             }
         }
