@@ -4,6 +4,7 @@ import { DashboardLayout } from '../presentation/layouts/DashboardLayout';
 import { OverviewPage } from '../presentation/pages/dashboard/overview/OverviewPage';
 import { AuthLayout } from '../presentation/layouts/AuthLayout';
 import { LoginPageNew } from '../presentation/pages/auth/LoginPage';
+import { TwoFAVerifyPage } from '../presentation/pages/auth/TwoFAVerifyPage';
 import { ProtectedRoute } from '../presentation/components/auth/ProtectedRoute';
 import { GuestRoute } from '../presentation/components/auth/GuestRoute';
 import { AdminRoute } from '../presentation/components/auth/AdminRoute';
@@ -18,14 +19,13 @@ import { TransactionPage } from '../presentation/pages/dashboard/transactions/Tr
 import { BudgetPage } from '../presentation/pages/dashboard/budgets/BudgetPage';
 import { ReportsPage } from '../presentation/pages/dashboard/reports/ReportsPage';
 import { RecurringPage } from '../presentation/pages/dashboard/recurring/RecurringPage';
+import { TwoFASetupPage } from '../presentation/pages/settings/TwoFASetupPage';
+import { TwoFARegisterPage } from '../presentation/pages/auth/TwoFARegisterPage';
+import { MFASettingsPage } from '../presentation/pages/admin/MFASettingsPage';
 import config from './config';
 
 export const AppRoutes: React.FC = () => {
     const routes = [
-        {
-            path: '/',
-            element: <Navigate to="/dashboard" replace />
-        },
         {
             element: <GuestRoute />, // Prevent authenticated users from login
             children: [
@@ -35,6 +35,14 @@ export const AppRoutes: React.FC = () => {
                     children: [
                         { index: true, element: <LoginPageNew /> }
                     ]
+                },
+                {
+                    path: '/login/2fa-register',
+                    element: <TwoFARegisterPage />
+                },
+                {
+                    path: '/login/2fa-verify',
+                    element: <TwoFAVerifyPage />
                 },
                 {
                     path: '/oauth/callback',
@@ -72,6 +80,14 @@ export const AppRoutes: React.FC = () => {
                         },
                         { path: 'profile', element: <ProfilePage /> },
                         { path: 'settings/notifications', element: <NotificationPage /> },
+                        { path: 'settings/2fa', element: <TwoFASetupPage /> },
+                        {
+                            path: 'user/mfa-settings',
+                            element: <AdminRoute />,
+                            children: [
+                                { index: true, element: <MFASettingsPage /> }
+                            ]
+                        },
                     ],
                 }
             ]

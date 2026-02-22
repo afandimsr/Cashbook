@@ -119,8 +119,8 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 
 // Login godoc
 // @Summary      Authenticate user session
-// @Description  Validate user credentials and generate a secure JWT access token for platform interaction.
-// @Tags         Users
+// @Description  Validate user credentials. If 2FA is enabled, returns a temporary token for 2FA verification.
+// @Tags         Auth
 // @Accept       json
 // @Produce      json
 // @Param        body body user.LoginRequest true "Login payload"
@@ -137,15 +137,13 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.usecase.Login(req.Email, req.Password)
+	loginResp, err := h.usecase.Login(req.Email, req.Password)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, "400", "Username/Password Tidak Valid", err.Error())
 		return
 	}
 
-	response.Success(c, http.StatusOK, "login success", user.LoginResponse{
-		Token: token,
-	})
+	response.Success(c, http.StatusOK, "login success", loginResp)
 }
 
 // UpdateUser godoc

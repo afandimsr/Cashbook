@@ -1,5 +1,5 @@
 import type { IAuthRepository } from '../../domain/repositories/IAuthRepository';
-import type { User } from '../../domain/entities/User';
+import type { LoginResponse } from '../../domain/entities/User';
 
 export class LoginUseCase {
     private authRepository: IAuthRepository;
@@ -8,7 +8,7 @@ export class LoginUseCase {
         this.authRepository = authRepository;
     }
 
-    async execute(username: string, password: string): Promise<{ token: string; user: User }> {
+    async execute(username: string, password: string): Promise<LoginResponse> {
         if (!username || !password) {
             throw new Error('Username and password are required');
         }

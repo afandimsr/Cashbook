@@ -11,6 +11,7 @@ A modern, full-stack personal finance management application built with **Go (Go
 - **Recurring Transactions**: Automate your repetitive bills and subscriptions.
 - **Financial Reports**: Interactive charts and data breakdown for spending analysis (powered by Recharts).
 - **Dual Authentication**: Traditional Username/Password login and Google OAuth integration.
+- **Two-Factor Authentication (2FA)**: TOTP-based authentication with QR code setup, backup codes, and admin-enforced MFA.
 - **Progressive Web App (PWA)**: Installable on mobile and desktop devices with offline support and fast loading.
 
 ## 🛠️ Technology Stack
@@ -30,6 +31,25 @@ A modern, full-stack personal finance management application built with **Go (Go
 - **Vite**: Ultra-fast build tool and development server.
 - **Vite PWA**: Professional PWA integration for installation and offline support.
 - **Recharts**: Modular charting components.
+
+## 🔐 Two-Factor Authentication (2FA)
+
+CashBook supports TOTP-based Two-Factor Authentication for enhanced security.
+
+### Features
+- **TOTP Authentication**: Time-based one-time passwords using authenticator apps (Google Authenticator, Authy, etc.)
+- **QR Code Setup**: Easy scanning of QR codes to set up 2FA
+- **Backup Codes**: Generate 10 one-time backup codes for account recovery
+- **Admin Enforcement**: Administrators can require all users to enable 2FA system-wide
+
+### Login Flow with 2FA
+1. User enters email/password
+2. If 2FA is enabled, user is prompted to enter TOTP code or backup code
+3. After verification, user gains access to dashboard
+
+### Admin 2FA Settings
+- Navigate to `/dashboard/user/mfa-settings` to enforce 2FA for all users
+- Users without 2FA enabled will be prompted to set it up on next login
 
 ## 📁 System Architecture
 

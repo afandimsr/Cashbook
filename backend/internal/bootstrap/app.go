@@ -44,27 +44,37 @@ func Run() {
 	authClient := external.NewAuthClient(cfg.ClientAuthURL)
 	googleAuth := auth.NewGoogleAuth(cfg)
 
+	// Repositories
 	userRepository := repo.NewUserRepo(db)
 	oauthStateRepository := repo.NewOauthStateRepo(db)
 	categoryRepository := repo.NewCategoryRepo(db)
 	transactionRepository := repo.NewTransactionRepo(db)
 	budgetRepository := repo.NewBudgetRepo(db)
 	recurringRepository := repo.NewRecurringRepo(db)
+	mfaSettingsRepository := repo.NewMFASettingsRepo(db)
+	mfaBackupCodeRepository := repo.NewMFABackupCodeRepo(db)
 
+	// Use cases
 	userUsecase := userUC.New(userRepository, authClient)
+	userUsecase.SetMFASettingsRepo(mfaSettingsRepository)
 	oauthUsecase := userUC.NewOAuthUsecase(userRepository, oauthStateRepository, googleAuth)
 	categoryUsecase := categoryUC.New(categoryRepository)
 	transactionUsecase := transactionUC.New(transactionRepository)
 	budgetUsecase := budgetUC.New(budgetRepository)
 	reportUsecase := reportUC.New(transactionRepository)
 	recurringUsecase := recurringUC.New(recurringRepository, transactionRepository)
+	twofaUsecase := userUC.NewTwoFAUsecase(userRepository, mfaBackupCodeRepository)
+	mfaSettingsUsecase := userUC.NewMFASettingsUsecase(mfaSettingsRepository)
 
+	// Handlers
 	userHandler := handler.New(cfg, userUsecase, oauthUsecase)
 	categoryHandler := handler.NewCategoryHandler(categoryUsecase)
 	transactionHandler := handler.NewTransactionHandler(transactionUsecase)
 	budgetHandler := handler.NewBudgetHandler(budgetUsecase)
 	reportHandler := handler.NewReportHandler(reportUsecase)
 	recurringHandler := handler.NewRecurringHandler(recurringUsecase)
+	twofaHandler := handler.NewTwoFAHandler(twofaUsecase)
+	mfaSettingsHandler := handler.NewMFASettingsHandler(mfaSettingsUsecase)
 
 	r := gin.Default()
 	r.SetTrustedProxies(nil) // Trust proxies for ClientIP() to work behind Nginx
@@ -74,7 +84,7 @@ func Run() {
 		middleware.ErrorHandler(),
 	)
 
-	RegisterRoutes(r, userHandler, categoryHandler, transactionHandler, budgetHandler, reportHandler, recurringHandler)
+	RegisterRoutes(r, userHandler, categoryHandler, transactionHandler, budgetHandler, reportHandler, recurringHandler, twofaHandler, mfaSettingsHandler)
 	if gin.Mode() != gin.ReleaseMode {
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}

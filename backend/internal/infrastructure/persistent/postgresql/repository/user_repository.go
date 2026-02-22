@@ -16,7 +16,7 @@ func NewUserRepo(db *sql.DB) user.UserRepository {
 }
 
 func (r *userRepo) FindAll(limit, offset int) ([]user.User, error) {
-	rows, err := r.db.Query("SELECT id, name, email, is_active FROM users LIMIT $1 OFFSET $2", limit, offset)
+	rows, err := r.db.Query("SELECT id, name, email, is_active, totp_enabled FROM users LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func (r *userRepo) FindAll(limit, offset int) ([]user.User, error) {
 	var users []user.User
 	for rows.Next() {
 		var u user.User
-		rows.Scan(&u.ID, &u.Name, &u.Email, &u.IsActive)
+		rows.Scan(&u.ID, &u.Name, &u.Email, &u.IsActive, &u.TOTPEnabled)
 		// fetch roles for user
 		rRows, _ := r.db.Query("SELECT r.name FROM roles r JOIN user_roles ur ON ur.role_id = r.id WHERE ur.user_id = $1", u.ID)
 		var roles []string
@@ -46,7 +46,8 @@ func (r *userRepo) FindAll(limit, offset int) ([]user.User, error) {
 func (r *userRepo) FindByID(id int64) (user.User, error) {
 	var u user.User
 	var googleID sql.NullString
-	err := r.db.QueryRow("SELECT id, name, email, password, google_id, is_active FROM users WHERE id = $1", id).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &googleID, &u.IsActive)
+	var totpSecret sql.NullString
+	err := r.db.QueryRow("SELECT id, name, email, password, google_id, is_active, totp_secret, totp_enabled FROM users WHERE id = $1", id).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &googleID, &u.IsActive, &totpSecret, &u.TOTPEnabled)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return u, errors.New("user not found")
@@ -57,6 +58,9 @@ func (r *userRepo) FindByID(id int64) (user.User, error) {
 		u.GoogleID = googleID.String
 	} else {
 		u.GoogleID = ""
+	}
+	if totpSecret.Valid {
+		u.TOTPSecret = totpSecret.String
 	}
 	// populate roles
 	rows, _ := r.db.Query("SELECT r.name FROM roles r JOIN user_roles ur ON ur.role_id = r.id WHERE ur.user_id = $1", u.ID)
@@ -79,7 +83,7 @@ func (r *userRepo) Save(u user.User) error {
 		return err
 	}
 	var userID int64
-	err = tx.QueryRow("INSERT INTO users(name, email, password, google_id, is_active) VALUES($1, $2, $3, $4, $5) RETURNING id", u.Name, u.Email, u.Password, u.GoogleID, u.IsActive).Scan(&userID)
+	err = tx.QueryRow("INSERT INTO users(name, email, password, google_id, is_active, totp_secret, totp_enabled) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id", u.Name, u.Email, u.Password, u.GoogleID, u.IsActive, u.TOTPSecret, u.TOTPEnabled).Scan(&userID)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -106,7 +110,7 @@ func (r *userRepo) Update(u user.User) error {
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec("UPDATE users SET name = $1, email = $2, password = $3, google_id = $4, is_active = $5 WHERE id = $6", u.Name, u.Email, u.Password, u.GoogleID, u.IsActive, u.ID)
+	_, err = tx.Exec("UPDATE users SET name = $1, email = $2, password = $3, google_id = $4, is_active = $5, totp_secret = $6, totp_enabled = $7 WHERE id = $8", u.Name, u.Email, u.Password, u.GoogleID, u.IsActive, u.TOTPSecret, u.TOTPEnabled, u.ID)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -133,6 +137,45 @@ func (r *userRepo) Update(u user.User) error {
 	return tx.Commit()
 }
 
+func (r *userRepo) UpdateTOTPSecret(u user.User) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec("UPDATE users SET totp_secret = $1 WHERE id = $2", u.TOTPSecret, u.ID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
+}
+
+func (r *userRepo) EnableTOTP(u user.User) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec("UPDATE users SET totp_enabled = $1 WHERE id = $2", u.TOTPEnabled, u.ID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
+}
+
+func (r *userRepo) DisableTOTP(u user.User) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec("UPDATE users SET totp_secret = $1, totp_enabled = $2, google_id = $3 WHERE id = $4", u.TOTPSecret, u.TOTPEnabled, nil, u.ID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
+}
+
 func (r *userRepo) Delete(id int64) error {
 	_, err := r.db.Exec("DELETE FROM users WHERE id = $1", id)
 	return err
@@ -141,7 +184,8 @@ func (r *userRepo) Delete(id int64) error {
 func (r *userRepo) FindByEmail(email string) (user.User, error) {
 	var u user.User
 	var googleID sql.NullString
-	err := r.db.QueryRow("SELECT id, name, email, password, google_id, is_active FROM users WHERE email = $1", email).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &googleID, &u.IsActive)
+	var totpSecret sql.NullString
+	err := r.db.QueryRow("SELECT id, name, email, password, google_id, is_active, totp_secret, totp_enabled FROM users WHERE email = $1", email).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &googleID, &u.IsActive, &totpSecret, &u.TOTPEnabled)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return u, errors.New("user not found")
@@ -152,6 +196,9 @@ func (r *userRepo) FindByEmail(email string) (user.User, error) {
 		u.GoogleID = googleID.String
 	} else {
 		u.GoogleID = ""
+	}
+	if totpSecret.Valid {
+		u.TOTPSecret = totpSecret.String
 	}
 	rows, _ := r.db.Query("SELECT r.name FROM roles r JOIN user_roles ur ON ur.role_id = r.id WHERE ur.user_id = $1", u.ID)
 	var roles []string
@@ -170,7 +217,8 @@ func (r *userRepo) FindByEmail(email string) (user.User, error) {
 func (r *userRepo) FindByGoogleID(googleID string) (user.User, error) {
 	var u user.User
 	var gID sql.NullString
-	err := r.db.QueryRow("SELECT id, name, email, password, google_id, is_active FROM users WHERE google_id = $1", googleID).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &gID, &u.IsActive)
+	var totpSecret sql.NullString
+	err := r.db.QueryRow("SELECT id, name, email, password, google_id, is_active, totp_secret, totp_enabled FROM users WHERE google_id = $1", googleID).Scan(&u.ID, &u.Name, &u.Email, &u.Password, &gID, &u.IsActive, &totpSecret, &u.TOTPEnabled)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return u, errors.New("user not found")
@@ -181,6 +229,9 @@ func (r *userRepo) FindByGoogleID(googleID string) (user.User, error) {
 		u.GoogleID = gID.String
 	} else {
 		u.GoogleID = ""
+	}
+	if totpSecret.Valid {
+		u.TOTPSecret = totpSecret.String
 	}
 	rows, _ := r.db.Query("SELECT r.name FROM roles r JOIN user_roles ur ON ur.role_id = r.id WHERE ur.user_id = $1", u.ID)
 	var roles []string

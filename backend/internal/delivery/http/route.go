@@ -14,16 +14,32 @@ func RegisterRoutes(
 	budgetHandler *handler.BudgetHandler,
 	reportHandler *handler.ReportHandler,
 	recurringHandler *handler.RecurringHandler,
+	twofaHandler *handler.TwoFAHandler,
+	mfaSettingsHandler *handler.MFASettingsHandler,
 ) {
 	api := r.Group("/api/v1")
 
-	// auth routes
+	// auth routes (public)
 	api.POST("/login", userHandler.Login)
 	api.GET("/auth/google/login", userHandler.GoogleLogin)
 	api.GET("/auth/google/callback", userHandler.GoogleCallback)
 
+	// 2FA routes (public — used during login)
+	api.POST("/2fa/verify", twofaHandler.VerifyLogin)
+	api.POST("/2fa/backup/verify", twofaHandler.VerifyBackupCode)
+
 	// health check
 	api.GET("/health", healthHandler)
+
+	// 2FA routes (authenticated — for setup/management)
+	twofa := api.Group("/2fa")
+	twofa.Use(middleware.AuthMiddleware())
+	{
+		twofa.POST("/setup", twofaHandler.Setup)
+		twofa.POST("/setup/verify", twofaHandler.VerifySetup)
+		twofa.DELETE("/disable", twofaHandler.Disable)
+		twofa.POST("/backup-codes", twofaHandler.GenerateBackupCodes)
+	}
 
 	// user routes (protected)
 	users := api.Group("/users")
@@ -35,6 +51,22 @@ func RegisterRoutes(
 		users.PUT("/:id", userHandler.UpdateUser)
 		users.DELETE("/:id", userHandler.DeleteUser)
 		users.POST("/:id/reset-password", userHandler.ResetPassword)
+	}
+
+	// admin MFA settings (protected + admin only)
+	admin := api.Group("/admin")
+	admin.Use(middleware.AuthMiddleware(), middleware.AdminOnly())
+	{
+		admin.GET("/mfa-settings", mfaSettingsHandler.GetSettings)
+		admin.PUT("/mfa-settings", mfaSettingsHandler.UpdateSettings)
+	}
+
+	// user MFA settings (protected + admin only) - alternative route
+	userRoutes := api.Group("/user")
+	userRoutes.Use(middleware.AuthMiddleware(), middleware.AdminOnly())
+	{
+		userRoutes.GET("/mfa-settings", mfaSettingsHandler.GetSettings)
+		userRoutes.PUT("/mfa-settings", mfaSettingsHandler.UpdateSettings)
 	}
 
 	// category routes

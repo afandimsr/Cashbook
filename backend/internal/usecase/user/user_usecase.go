@@ -10,8 +10,9 @@ import (
 )
 
 type Usecase struct {
-	repo        user.UserRepository
-	authService user.AuthService
+	repo            user.UserRepository
+	authService     user.AuthService
+	mfaSettingsRepo user.MFASettingsRepository
 }
 
 func New(repo user.UserRepository, authService user.AuthService) *Usecase {
@@ -19,6 +20,10 @@ func New(repo user.UserRepository, authService user.AuthService) *Usecase {
 		repo:        repo,
 		authService: authService,
 	}
+}
+
+func (u *Usecase) SetMFASettingsRepo(repo user.MFASettingsRepository) {
+	u.mfaSettingsRepo = repo
 }
 
 func (u *Usecase) GetAll(page, limit int) ([]user.User, error) {
@@ -95,23 +100,20 @@ func (u *Usecase) Delete(id int64) error {
 	return nil
 }
 
-func (u *Usecase) Login(email, password string) (string, error) {
+func (u *Usecase) Login(email, password string) (*user.LoginResponse, error) {
 	// 1. Find user by email
 	existingUser, err := u.repo.FindByEmail(email)
 	if err != nil {
 		log.Printf("Login: user not found by email=%s err=%v", email, err)
-		return "", apperror.Unauthorized("invalid credentials [1]", nil)
+		return nil, apperror.Unauthorized("invalid credentials [1]", nil)
 	}
 	log.Printf("Login: found user id=%d email=%s roles=%v google_id=%s", existingUser.ID, existingUser.Email, existingUser.Roles, existingUser.GoogleID)
 
 	if !existingUser.IsActive {
-		return "", apperror.Unauthorized("invalid credentials [2]", nil)
+		return nil, apperror.Unauthorized("invalid credentials [2]", nil)
 	}
 
 	// 2. Authenticate
-	// If AuthService is available (and configured), try it first/instead.
-	// For this implementation, if AuthService is provided, we use it to validate password.
-	// If it returns true, we consider it valid.
 	authenticated := false
 	if u.authService != nil {
 		isAuth, err := u.authService.Login(email, password)
@@ -120,25 +122,62 @@ func (u *Usecase) Login(email, password string) (string, error) {
 		}
 	}
 
-	// Fallback to local bcrypt if not authenticated via external service (or if service not used)
-	// Note: The requirement implies "if login using client auth service".
-	// We can assume priority: External > Local.
 	if !authenticated {
 		if err := bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(password)); err != nil {
 			log.Printf("Login: bcrypt compare failed for user id=%d err=%v", existingUser.ID, err)
-			return "", apperror.Unauthorized("invalid credentials [2]", nil)
+			return nil, apperror.Unauthorized("invalid credentials [2]", nil)
 		}
 		log.Printf("Login: password verified for user id=%d", existingUser.ID)
 	}
 
-	// 3. Generate Token
-	// include roles in token
-	token, err := jwt.GenerateToken(existingUser.ID, existingUser.Email, existingUser.Name, existingUser.Roles)
-	if err != nil {
-		return "", apperror.Internal(err)
+	// 3. Check if totp secret null return to register 2fa
+	if existingUser.TOTPSecret == "" {
+		tempToken, err := jwt.GenerateTempToken(existingUser.ID, existingUser.Email, "setup")
+		if err != nil {
+			return nil, apperror.Internal(err)
+		}
+		return &user.LoginResponse{
+			Requires2FA: true,
+			TempToken:   tempToken,
+		}, nil
 	}
 
-	return token, nil
+	// 4. Check if 2FA is enabled for this user
+	if existingUser.TOTPEnabled {
+		tempToken, err := jwt.GenerateTempToken(existingUser.ID, existingUser.Email, "verify")
+		if err != nil {
+			return nil, apperror.Internal(err)
+		}
+		return &user.LoginResponse{
+			Requires2FA: true,
+			TempToken:   tempToken,
+		}, nil
+	}
+
+	// 4. Check if MFA is enforced system-wide (user hasn't set up 2FA yet)
+	if u.mfaSettingsRepo != nil {
+		settings, err := u.mfaSettingsRepo.Get()
+		if err == nil && settings != nil && settings.Enforce2FA && !existingUser.TOTPEnabled {
+			// Return a token but signal that 2FA setup is required
+			token, err := jwt.GenerateToken(existingUser.ID, existingUser.Email, existingUser.Name, existingUser.Roles)
+			if err != nil {
+				return nil, apperror.Internal(err)
+			}
+			return &user.LoginResponse{
+				Token: token,
+			}, nil
+		}
+	}
+
+	// 5. Generate full Token
+	token, err := jwt.GenerateToken(existingUser.ID, existingUser.Email, existingUser.Name, existingUser.Roles)
+	if err != nil {
+		return nil, apperror.Internal(err)
+	}
+
+	return &user.LoginResponse{
+		Token: token,
+	}, nil
 }
 
 func (u *Usecase) ResetPassword(id int64, newPassword string) error {

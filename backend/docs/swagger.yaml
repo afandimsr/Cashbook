@@ -31,6 +31,11 @@ definitions:
       user_id:
         type: integer
     type: object
+  handler.updateMFARequest:
+    properties:
+      enforce_2fa:
+        type: boolean
+    type: object
   recurring_transaction.Frequency:
     enum:
     - daily
@@ -214,6 +219,25 @@ definitions:
     required:
     - password
     type: object
+  user.TwoFASetupVerifyRequest:
+    properties:
+      code:
+        type: string
+    required:
+    - code
+    type: object
+  user.TwoFAVerifyRequest:
+    properties:
+      code:
+        maxLength: 9
+        minLength: 6
+        type: string
+      temp_token:
+        type: string
+    required:
+    - code
+    - temp_token
+    type: object
   user.User:
     properties:
       email:
@@ -232,6 +256,8 @@ definitions:
         items:
           type: string
         type: array
+      totp_enabled:
+        type: boolean
     type: object
 host: localhost:8181
 info:
@@ -244,6 +270,161 @@ info:
   title: CashBook - Personal Finance API
   version: "1.0"
 paths:
+  /2fa/backup-codes:
+    post:
+      description: Generate 10 one-time backup codes for account recovery.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.SuccessSingleUserResponse'
+      summary: Generate backup codes
+      tags:
+      - 2FA
+  /2fa/backup/verify:
+    post:
+      consumes:
+      - application/json
+      description: Use a one-time backup code to complete 2FA login.
+      parameters:
+      - description: Backup verify payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/user.TwoFAVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.SuccessSingleUserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorSwaggerResponse'
+      summary: Verify backup code during login
+      tags:
+      - 2FA
+  /2fa/disable:
+    delete:
+      description: Turn off two-factor authentication for the current user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.SuccessSingleUserResponse'
+      summary: Disable 2FA
+      tags:
+      - 2FA
+  /2fa/setup:
+    post:
+      description: Generate TOTP secret and QR code for the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.SuccessSingleUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorSwaggerResponse'
+      summary: Initialize 2FA setup
+      tags:
+      - 2FA
+  /2fa/setup/verify:
+    post:
+      consumes:
+      - application/json
+      description: Validate the initial TOTP code to enable 2FA.
+      parameters:
+      - description: Verify payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/user.TwoFASetupVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.SuccessSingleUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorSwaggerResponse'
+      summary: Confirm 2FA setup
+      tags:
+      - 2FA
+  /2fa/verify:
+    post:
+      consumes:
+      - application/json
+      description: Validate TOTP code with temporary token to complete login.
+      parameters:
+      - description: Verify payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/user.TwoFAVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.SuccessSingleUserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.ErrorSwaggerResponse'
+      summary: Verify 2FA during login
+      tags:
+      - 2FA
+  /admin/mfa-settings:
+    get:
+      description: Retrieve the current system-wide MFA enforcement policy.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.SuccessSingleUserResponse'
+      summary: Get MFA settings
+      tags:
+      - Admin
+    put:
+      consumes:
+      - application/json
+      description: Toggle system-wide 2FA enforcement. Admin only.
+      parameters:
+      - description: MFA settings payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.updateMFARequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.SuccessSingleUserResponse'
+      summary: Update MFA settings
+      tags:
+      - Admin
   /auth/google/callback:
     get:
       description: Handles the redirection from Google after user authorization, exchanges
@@ -494,8 +675,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Validate user credentials and generate a secure JWT access token
-        for platform interaction.
+      description: Validate user credentials. If 2FA is enabled, returns a temporary
+        token for 2FA verification.
       parameters:
       - description: Login payload
         in: body
@@ -524,7 +705,7 @@ paths:
             $ref: '#/definitions/response.ErrorSwaggerResponse'
       summary: Authenticate user session
       tags:
-      - Users
+      - Auth
   /recurring:
     get:
       description: Retrieve all active recurring transaction templates set up for
