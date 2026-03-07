@@ -23,8 +23,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
     // Handle 401 Unauthorized globally
     if (response.status === 401) {
-        useAuthStore.getState().logout();
-        throw new Error('Session expired. Please login again.');
+        const { isAuthenticated, logout } = useAuthStore.getState();
+        if (isAuthenticated) {
+            logout();
+        }
+        // Return a rejected promise with a specific error that can be identified
+        return Promise.reject(new Error('Unauthorized: Session expired'));
     }
 
     let data;
