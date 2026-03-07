@@ -119,21 +119,32 @@ CashBook/
 - **Default Admin**: `admin@example.com` / `admin123`
 - **OAuth**: Click the "Sign in with Google" button (requires valid credentials in backend `.env`).
 
-## 🐳 Docker Deployment
+## 🐳 Deployment
 
-The application is fully containerized with Docker Compose for easy deployment.
+The application is fully containerized with Docker Compose. We provide a helper script to automate the deployment process.
 
-### Rebuild and Deploy
-To rebuild the entire stack (including any PWA changes):
-```bash
-docker compose --env-file ./frontend/.env up -d --build
-```
+### Automated Deployment (Recommended)
+The `deploy.sh` script handles network creation, building images, and running migrations automatically.
 
-### Specific Service Update
-To update only the frontend (e.g., for PWA updates):
-```bash
-docker compose --env-file ./frontend/.env up -d --build frontend
-```
+1.  **Configure Environment**:
+    Make sure your root `.env` is configured (see `.env.example`).
+2.  **Run Deploy Script**:
+    ```bash
+    chmod +x deploy.sh
+    ./deploy.sh
+    ```
+
+### Manual Docker Deployment
+If you prefer to run commands manually:
+
+1.  **Build and Start Services**:
+    ```bash
+    docker compose --env-file ./frontend/.env up -d --build backend frontend
+    ```
+2.  **Run Migrations**:
+    ```bash
+    docker compose --env-file .env run --rm migrate
+    ```
 
 ## 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
