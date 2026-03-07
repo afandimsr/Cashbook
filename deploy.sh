@@ -64,12 +64,12 @@ echo -e "${YELLOW}🛠️  Building and starting containers...${NC}"
 # We include both the root .env (for migration vars) and frontend .env (for build args)
 # Note: Multiple --env-file flags require Docker Compose V2. If older, consider merging envs.
 if docker compose version | grep -q "v2"; then
-    docker compose --env-file "$FRONTEND_ENV" up -d --build backend frontend
+    docker compose --env-file "$FRONTEND_ENV" up -d --build frontend
 else
     # Fallback for older versions: use root .env and assume frontend vars might be needed manually 
     # or just use the one that covers build args.
     echo -e "${YELLOW}⚠️  Note: Docker Compose V1 detected. Using frontend .env for build args.${NC}"
-    docker compose --env-file "$FRONTEND_ENV" up -d --build
+    docker compose --env-file "$FRONTEND_ENV" up -d --build frontend
 fi
 
 # 5. Wait for database to be ready
