@@ -6,6 +6,7 @@ import { getTheme } from '../theme';
 import { AppRoutes } from './routes';
 import { useThemeStore } from '../state/themeStore';
 import { ScrollToTop } from '../presentation/components/utils/ScrollToTop';
+import { ErrorBoundary } from '../presentation/components/utils/ErrorBoundary';
 
 interface AppProps {
     initialTitle: string;
@@ -22,10 +23,12 @@ const App: React.FC<AppProps> = ({ initialTitle }) => {
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <BrowserRouter>
-                <ScrollToTop />
-                <AppRoutes />
-            </BrowserRouter>
+            <ErrorBoundary>
+                <BrowserRouter>
+                    <ScrollToTop />
+                    <AppRoutes />
+                </BrowserRouter>
+            </ErrorBoundary>
         </ThemeProvider>
     );
 };
