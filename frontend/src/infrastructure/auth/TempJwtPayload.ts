@@ -1,5 +1,5 @@
 export interface TempJwtPayload {
-    user_id: string;
+    user_id: number;
     email: string;
     purpose: string;
     exp: number;
