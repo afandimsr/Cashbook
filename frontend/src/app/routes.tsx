@@ -19,6 +19,7 @@ import { TransactionPage } from '../presentation/pages/dashboard/transactions/Tr
 import { BudgetPage } from '../presentation/pages/dashboard/budgets/BudgetPage';
 import { ReportsPage } from '../presentation/pages/dashboard/reports/ReportsPage';
 import { RecurringPage } from '../presentation/pages/dashboard/recurring/RecurringPage';
+import { SharedExpensePage } from '../presentation/pages/dashboard/shared';
 import { TwoFASetupPage } from '../presentation/pages/settings/TwoFASetupPage';
 import { TwoFARegisterPage } from '../presentation/pages/auth/TwoFARegisterPage';
 import { MFASettingsPage } from '../presentation/pages/admin/MFASettingsPage';
@@ -61,6 +62,9 @@ export const AppRoutes: React.FC = () => {
             path: '/',
             element: <ProtectedRoute />, // Protect these routes
             children: [
+                // Base URL "/" has no page of its own — send authenticated users
+                // to the dashboard instead of rendering an empty <Outlet /> (blank).
+                { index: true, element: <Navigate to="/dashboard" replace /> },
                 {
                     path: 'dashboard',
                     element: <DashboardLayout />,
@@ -70,6 +74,7 @@ export const AppRoutes: React.FC = () => {
                         { path: 'budgets', element: <BudgetPage /> },
                         { path: 'reports', element: <ReportsPage /> },
                         { path: 'recurring', element: <RecurringPage /> },
+                        { path: 'shared-expenses', element: <SharedExpensePage /> },
                         { path: 'categories', element: <CategoryPage /> },
                         {
                             path: 'users',

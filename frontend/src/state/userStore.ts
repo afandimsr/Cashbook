@@ -14,9 +14,9 @@ interface UserState {
     error: string | null;
     fetchUsers: () => Promise<void>;
     addUser: (user: Omit<CreateUserRequest, 'id'>) => Promise<void>;
-    editUser: (id: string, user: Partial<User>) => Promise<void>;
-    removeUser: (id: string) => Promise<void>;
-    resetPassword: (id: string, password: string) => Promise<void>;
+    editUser: (id: number, user: Partial<User>) => Promise<void>;
+    removeUser: (id: number) => Promise<void>;
+    resetPassword: (id: number, password: string) => Promise<void>;
 }
 
 // Dependency Injection
@@ -83,6 +83,7 @@ export const useUserStore = create<UserState>((set, get) => ({
             throw err;
         }
     },
+    
     resetPassword: async (id, password) => {
         set({ isLoading: true, error: null });
         try {

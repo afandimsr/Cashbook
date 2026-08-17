@@ -16,6 +16,7 @@ func RegisterRoutes(
 	recurringHandler *handler.RecurringHandler,
 	twofaHandler *handler.TwoFAHandler,
 	mfaSettingsHandler *handler.MFASettingsHandler,
+	sharedExpenseHandler *handler.SharedExpenseHandler,
 ) {
 	api := r.Group("/api/v1")
 
@@ -114,6 +115,9 @@ func RegisterRoutes(
 		recurring.DELETE("/:id", recurringHandler.DeleteRecurring)
 		recurring.POST("/process", recurringHandler.ProcessDue)
 	}
+
+	// shared expense routes
+	sharedExpenseHandler.RegisterRoutes(api)
 }
 
 func healthHandler(c *gin.Context) {

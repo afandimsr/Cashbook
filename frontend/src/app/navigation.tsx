@@ -9,6 +9,7 @@ import ReceiptIcon from '@mui/icons-material/Receipt';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import GroupsIcon from '@mui/icons-material/Groups';
 import SecurityIcon from '@mui/icons-material/Security';
 
 export interface NavItem {
@@ -39,6 +40,11 @@ export const menuItems: NavItem[] = [
         text: 'Recurring',
         icon: <AutorenewIcon />,
         path: '/dashboard/recurring'
+    },
+    {
+        text: 'Shared Expenses',
+        icon: <GroupsIcon />,
+        path: '/dashboard/shared-expenses'
     },
     {
         text: 'Reports',

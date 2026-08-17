@@ -7,12 +7,22 @@ import (
 	"github.com/afandimsr/cashbook-backend/internal/domain/transaction"
 )
 
+type transactionQueryExecutor interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+	QueryRow(query string, args ...interface{}) *sql.Row
+}
+
 type transactionRepo struct {
-	db *sql.DB
+	db transactionQueryExecutor
 }
 
 func NewTransactionRepo(db *sql.DB) transaction.Repository {
 	return &transactionRepo{db: db}
+}
+
+func NewTransactionRepoWithTx(tx *sql.Tx) transaction.Repository {
+	return &transactionRepo{db: tx}
 }
 
 func (r *transactionRepo) FindAllByUserID(userID int64, limit, offset int, filter transaction.Filter) ([]transaction.Transaction, error) {

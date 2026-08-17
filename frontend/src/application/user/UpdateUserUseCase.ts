@@ -7,7 +7,7 @@ export class UpdateUserUseCase {
         this.userRepository = userRepository;
     }
 
-    async execute(id: string, user: Partial<User>): Promise<User> {
+    async execute(id: number, user: Partial<User>): Promise<User> {
         return this.userRepository.updateUser(id, user);
     }
 }

@@ -31,7 +31,7 @@ export class UserRepositoryImpl implements IUserRepository {
         }
     }
 
-    async updateUser(id: string, userData: Partial<User>): Promise<User> {
+    async updateUser(id: number, userData: Partial<User>): Promise<User> {
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         const payload = toUserApi(userData);
@@ -45,7 +45,7 @@ export class UserRepositoryImpl implements IUserRepository {
         }
     }
 
-    async deleteUser(id: string): Promise<void> {
+    async deleteUser(id: number): Promise<void> {
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         try {
@@ -56,7 +56,7 @@ export class UserRepositoryImpl implements IUserRepository {
         }
     }
 
-    async resetPassword(id: string, password: string): Promise<void> {
+    async resetPassword(id: number, password: string): Promise<void> {
         try {
             await apiClient.post(`/users/${id}/reset-password`, { password });
         } catch (error: unknown) {

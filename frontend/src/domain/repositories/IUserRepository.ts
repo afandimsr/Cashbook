@@ -5,7 +5,7 @@ import type { CreateUserRequest } from '../../application/user/Create/CreateUser
 export interface IUserRepository {
     getUsers(): Promise<GetUserUseCaseDTO[]>;
     createUser(user: Omit<CreateUserRequest, 'id'>): Promise<User>;
-    updateUser(id: string, user: Partial<User>): Promise<User>;
-    deleteUser(id: string): Promise<void>;
-    resetPassword(id: string, password: string): Promise<void>;
+    updateUser(id: number, user: Partial<User>): Promise<User>;
+    deleteUser(id: number): Promise<void>;
+    resetPassword(id: number, password: string): Promise<void>;
 }

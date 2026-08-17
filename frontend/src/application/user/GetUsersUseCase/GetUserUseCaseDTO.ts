@@ -1,5 +1,5 @@
 export interface GetUserUseCaseDTO {
-    id: string;
+    id: number;
     name: string;
     email: string;
     username: string;

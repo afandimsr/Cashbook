@@ -13,6 +13,7 @@ func RegisterRoutes(r *gin.Engine, userHandler *handler.UserHandler, categoryHan
 	recurringHandler *handler.RecurringHandler,
 	twofaHandler *handler.TwoFAHandler,
 	mfaSettingsHandler *handler.MFASettingsHandler,
+	sharedExpenseHandler *handler.SharedExpenseHandler,
 ) {
-	httpDelivery.RegisterRoutes(r, userHandler, categoryHandler, transactionHandler, budgetHandler, reportHandler, recurringHandler, twofaHandler, mfaSettingsHandler)
+	httpDelivery.RegisterRoutes(r, userHandler, categoryHandler, transactionHandler, budgetHandler, reportHandler, recurringHandler, twofaHandler, mfaSettingsHandler, sharedExpenseHandler)
 }

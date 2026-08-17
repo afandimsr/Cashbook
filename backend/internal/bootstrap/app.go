@@ -18,6 +18,7 @@ import (
 	reportUC "github.com/afandimsr/cashbook-backend/internal/usecase/report"
 	transactionUC "github.com/afandimsr/cashbook-backend/internal/usecase/transaction"
 	userUC "github.com/afandimsr/cashbook-backend/internal/usecase/user"
+	sharedExpenseUC "github.com/afandimsr/cashbook-backend/internal/usecase/shared_expense"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -53,6 +54,7 @@ func Run() {
 	recurringRepository := repo.NewRecurringRepo(db)
 	mfaSettingsRepository := repo.NewMFASettingsRepo(db)
 	mfaBackupCodeRepository := repo.NewMFABackupCodeRepo(db)
+	sharedExpenseRepository := repo.NewSharedExpenseRepo(db)
 
 	// Use cases
 	userUsecase := userUC.New(userRepository, authClient)
@@ -65,6 +67,7 @@ func Run() {
 	recurringUsecase := recurringUC.New(recurringRepository, transactionRepository)
 	twofaUsecase := userUC.NewTwoFAUsecase(userRepository, mfaBackupCodeRepository)
 	mfaSettingsUsecase := userUC.NewMFASettingsUsecase(mfaSettingsRepository)
+	sharedExpenseUsecase := sharedExpenseUC.New(sharedExpenseRepository)
 
 	// Handlers
 	userHandler := handler.New(cfg, userUsecase, oauthUsecase)
@@ -75,6 +78,7 @@ func Run() {
 	recurringHandler := handler.NewRecurringHandler(recurringUsecase)
 	twofaHandler := handler.NewTwoFAHandler(twofaUsecase)
 	mfaSettingsHandler := handler.NewMFASettingsHandler(mfaSettingsUsecase)
+	sharedExpenseHandler := handler.NewSharedExpenseHandler(sharedExpenseUsecase)
 
 	r := gin.Default()
 	r.SetTrustedProxies(nil) // Trust proxies for ClientIP() to work behind Nginx
@@ -84,7 +88,7 @@ func Run() {
 		middleware.ErrorHandler(),
 	)
 
-	RegisterRoutes(r, userHandler, categoryHandler, transactionHandler, budgetHandler, reportHandler, recurringHandler, twofaHandler, mfaSettingsHandler)
+	RegisterRoutes(r, userHandler, categoryHandler, transactionHandler, budgetHandler, reportHandler, recurringHandler, twofaHandler, mfaSettingsHandler, sharedExpenseHandler)
 	if gin.Mode() != gin.ReleaseMode {
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}

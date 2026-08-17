@@ -7,7 +7,7 @@ export class ResetPasswordUseCase {
         this.userRepository = userRepository;
     }
 
-    async execute(id: string, password: string): Promise<void> {
+    async execute(id: number, password: string): Promise<void> {
         if (!id) throw new Error('User ID is required');
         if (!password) throw new Error('Password is required');
 
