@@ -1,0 +1,3 @@
+# CashBook
+
+@AGENTS.md

@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"log"
+	"time"
 
 	_ "github.com/afandimsr/cashbook-backend/docs"
 	"github.com/afandimsr/cashbook-backend/internal/config"
@@ -12,13 +13,15 @@ import (
 	"github.com/afandimsr/cashbook-backend/internal/infrastructure/external"
 	repo "github.com/afandimsr/cashbook-backend/internal/infrastructure/persistent/postgresql/repository"
 	"github.com/afandimsr/cashbook-backend/internal/pkg/jwt"
+	"github.com/afandimsr/cashbook-backend/internal/pkg/ratelimit"
+	botUC "github.com/afandimsr/cashbook-backend/internal/usecase/bot"
 	budgetUC "github.com/afandimsr/cashbook-backend/internal/usecase/budget"
 	categoryUC "github.com/afandimsr/cashbook-backend/internal/usecase/category"
 	recurringUC "github.com/afandimsr/cashbook-backend/internal/usecase/recurring_transaction"
 	reportUC "github.com/afandimsr/cashbook-backend/internal/usecase/report"
+	sharedExpenseUC "github.com/afandimsr/cashbook-backend/internal/usecase/shared_expense"
 	transactionUC "github.com/afandimsr/cashbook-backend/internal/usecase/transaction"
 	userUC "github.com/afandimsr/cashbook-backend/internal/usecase/user"
-	sharedExpenseUC "github.com/afandimsr/cashbook-backend/internal/usecase/shared_expense"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -55,6 +58,8 @@ func Run() {
 	mfaSettingsRepository := repo.NewMFASettingsRepo(db)
 	mfaBackupCodeRepository := repo.NewMFABackupCodeRepo(db)
 	sharedExpenseRepository := repo.NewSharedExpenseRepo(db)
+	telegramRepository := repo.NewTelegramRepo(db)
+	auditRepository := repo.NewAuditRepo(db)
 
 	// Use cases
 	userUsecase := userUC.New(userRepository, authClient)
@@ -68,9 +73,21 @@ func Run() {
 	twofaUsecase := userUC.NewTwoFAUsecase(userRepository, mfaBackupCodeRepository)
 	mfaSettingsUsecase := userUC.NewMFASettingsUsecase(mfaSettingsRepository)
 	sharedExpenseUsecase := sharedExpenseUC.New(sharedExpenseRepository)
+	botUsecase := botUC.New(telegramRepository, categoryUsecase, transactionUsecase, reportUsecase, userUsecase, budgetUsecase)
+
+	// Rate limiters. In-memory, per-process — fine for this app's current
+	// single-instance deployment; a horizontally-scaled deployment would need
+	// a shared store (e.g. Redis) instead. See ratelimit package docs.
+	loginAccountLimiter := ratelimit.New(5, 15*time.Minute) // per-email: 5 consecutive failed logins / 15 min
+	loginIPLimiter := ratelimit.New(10, time.Minute)        // per-IP on /login
+	twoFAIPLimiter := ratelimit.New(10, time.Minute)        // per-IP on /2fa/verify + /2fa/backup/verify
+	linkCodeIPLimiter := ratelimit.New(10, time.Minute)     // per-IP on POST /telegram/link-code
+	loginRateLimit := middleware.RateLimit(loginIPLimiter, middleware.ClientIPKey)
+	twoFARateLimit := middleware.RateLimit(twoFAIPLimiter, middleware.ClientIPKey)
+	linkCodeRateLimit := middleware.RateLimit(linkCodeIPLimiter, middleware.ClientIPKey)
 
 	// Handlers
-	userHandler := handler.New(cfg, userUsecase, oauthUsecase)
+	userHandler := handler.New(cfg, userUsecase, oauthUsecase, loginAccountLimiter)
 	categoryHandler := handler.NewCategoryHandler(categoryUsecase)
 	transactionHandler := handler.NewTransactionHandler(transactionUsecase)
 	budgetHandler := handler.NewBudgetHandler(budgetUsecase)
@@ -79,6 +96,8 @@ func Run() {
 	twofaHandler := handler.NewTwoFAHandler(twofaUsecase)
 	mfaSettingsHandler := handler.NewMFASettingsHandler(mfaSettingsUsecase)
 	sharedExpenseHandler := handler.NewSharedExpenseHandler(sharedExpenseUsecase)
+	botHandler := handler.NewBotHandler(botUsecase, auditRepository)
+	botServiceAuth := middleware.ServiceAuthMiddleware(cfg.BotInternalAPIKey)
 
 	r := gin.Default()
 	r.SetTrustedProxies(nil) // Trust proxies for ClientIP() to work behind Nginx
@@ -88,7 +107,7 @@ func Run() {
 		middleware.ErrorHandler(),
 	)
 
-	RegisterRoutes(r, userHandler, categoryHandler, transactionHandler, budgetHandler, reportHandler, recurringHandler, twofaHandler, mfaSettingsHandler, sharedExpenseHandler)
+	RegisterRoutes(r, userHandler, categoryHandler, transactionHandler, budgetHandler, reportHandler, recurringHandler, twofaHandler, mfaSettingsHandler, sharedExpenseHandler, botHandler, botServiceAuth, loginRateLimit, twoFARateLimit, linkCodeRateLimit)
 	if gin.Mode() != gin.ReleaseMode {
 		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}

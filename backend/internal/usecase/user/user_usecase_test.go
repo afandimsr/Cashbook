@@ -126,7 +126,7 @@ func TestCreate(t *testing.T) {
 	usecase := uc.New(mockRepo, nil)
 
 	t.Run("Success", func(t *testing.T) {
-		newUser := user.User{Name: "New User", Email: "new@example.com", Password: "password123"}
+		newUser := user.User{Name: "New User", Email: "new@example.com", Password: "password123", Roles: []string{"USER"}}
 
 		// Expect Save to be called. Note: Password will be hashed, so we might need strict matching or wildcards.
 		// For simplicity, we match using mock.AnythingOfType for the user argument or check fields manually if needed.
@@ -141,8 +141,24 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("MissingEmail", func(t *testing.T) {
-		err := usecase.Create(user.User{Password: "123"})
+		err := usecase.Create(user.User{Password: "123", Roles: []string{"USER"}})
 		assert.Error(t, err)
+	})
+
+	t.Run("MissingRoles", func(t *testing.T) {
+		err := usecase.Create(user.User{Email: "new2@example.com", Password: "password123"})
+		assert.Error(t, err)
+	})
+}
+
+func TestUpdate(t *testing.T) {
+	mockRepo := new(MockUserRepository)
+	usecase := uc.New(mockRepo, nil)
+
+	t.Run("MissingRoles", func(t *testing.T) {
+		err := usecase.Update(1, user.User{Email: "existing@example.com"})
+		assert.Error(t, err)
+		mockRepo.AssertNotCalled(t, "FindByID", mock.Anything)
 	})
 }
 

@@ -21,8 +21,10 @@ import { ReportsPage } from '../presentation/pages/dashboard/reports/ReportsPage
 import { RecurringPage } from '../presentation/pages/dashboard/recurring/RecurringPage';
 import { SharedExpensePage } from '../presentation/pages/dashboard/shared';
 import { TwoFASetupPage } from '../presentation/pages/settings/TwoFASetupPage';
+import { TelegramSettingsPage } from '../presentation/pages/settings/TelegramSettingsPage';
 import { TwoFARegisterPage } from '../presentation/pages/auth/TwoFARegisterPage';
 import { MFASettingsPage } from '../presentation/pages/admin/MFASettingsPage';
+import { TelegramLinksPage } from '../presentation/pages/admin/TelegramLinksPage';
 import config from './config';
 
 export const AppRoutes: React.FC = () => {
@@ -83,9 +85,17 @@ export const AppRoutes: React.FC = () => {
                                 { index: true, element: <UserListPage /> }
                             ]
                         },
+                        {
+                            path: 'admin/telegram-links',
+                            element: <AdminRoute />,
+                            children: [
+                                { index: true, element: <TelegramLinksPage /> }
+                            ]
+                        },
                         { path: 'profile', element: <ProfilePage /> },
                         { path: 'settings/notifications', element: <NotificationPage /> },
                         { path: 'settings/2fa', element: <TwoFASetupPage /> },
+                        { path: 'settings/telegram', element: <TelegramSettingsPage /> },
                         {
                             path: 'user/mfa-settings',
                             element: <AdminRoute />,

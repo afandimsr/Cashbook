@@ -17,6 +17,10 @@ func (m *MockReportUsecase) GetCategorySpending(userID int64, month, year int) (
 	args := m.Called(userID, month, year)
 	return args.Get(0).([]report.CategoryReport), args.Error(1)
 }
+func (m *MockReportUsecase) GetMonthlyCategoryReport(userID int64, month, year int) (report.MonthlyCategoryReport, error) {
+	args := m.Called(userID, month, year)
+	return args.Get(0).(report.MonthlyCategoryReport), args.Error(1)
+}
 
 func TestReportHandler_GetCategorySpending(t *testing.T) {
 	uc := new(MockReportUsecase)

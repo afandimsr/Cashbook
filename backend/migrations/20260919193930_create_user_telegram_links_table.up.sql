@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS user_telegram_links (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    telegram_chat_id BIGINT NOT NULL UNIQUE,
+    telegram_username VARCHAR(255),
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    linked_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

@@ -14,6 +14,11 @@ func RegisterRoutes(r *gin.Engine, userHandler *handler.UserHandler, categoryHan
 	twofaHandler *handler.TwoFAHandler,
 	mfaSettingsHandler *handler.MFASettingsHandler,
 	sharedExpenseHandler *handler.SharedExpenseHandler,
+	botHandler *handler.BotHandler,
+	botServiceAuth gin.HandlerFunc,
+	loginRateLimit gin.HandlerFunc,
+	twoFARateLimit gin.HandlerFunc,
+	linkCodeRateLimit gin.HandlerFunc,
 ) {
-	httpDelivery.RegisterRoutes(r, userHandler, categoryHandler, transactionHandler, budgetHandler, reportHandler, recurringHandler, twofaHandler, mfaSettingsHandler, sharedExpenseHandler)
+	httpDelivery.RegisterRoutes(r, userHandler, categoryHandler, transactionHandler, budgetHandler, reportHandler, recurringHandler, twofaHandler, mfaSettingsHandler, sharedExpenseHandler, botHandler, botServiceAuth, loginRateLimit, twoFARateLimit, linkCodeRateLimit)
 }
