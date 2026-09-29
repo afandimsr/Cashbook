@@ -127,7 +127,7 @@ export const UserFormDialog: React.FC<UserFormDialogProps> = ({
                         <FormControl fullWidth margin="normal">
                             <InputLabel>Role</InputLabel>
                             <Select
-                                value={formData.roles}
+                                value={formData.roles[0] ?? ''}
                                 label="Role"
                                 onChange={(e) => {
                                     const value = e.target.value as "" | "ADMIN" | "USER";

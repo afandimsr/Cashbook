@@ -3,11 +3,13 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/afandimsr/cashbook-backend/internal/config"
 	"github.com/afandimsr/cashbook-backend/internal/delivery/http/response"
 	"github.com/afandimsr/cashbook-backend/internal/domain/apperror"
 	"github.com/afandimsr/cashbook-backend/internal/domain/user"
+	"github.com/afandimsr/cashbook-backend/internal/pkg/ratelimit"
 	uc "github.com/afandimsr/cashbook-backend/internal/usecase/user"
 	"github.com/gin-gonic/gin"
 )
@@ -16,13 +18,15 @@ type UserHandler struct {
 	cfg          *config.Config
 	usecase      *uc.Usecase
 	oauthUsecase uc.OAuthUsecase
+	loginLimiter *ratelimit.Limiter
 }
 
-func New(cfg *config.Config, usecase *uc.Usecase, oauthUsecase uc.OAuthUsecase) *UserHandler {
+func New(cfg *config.Config, usecase *uc.Usecase, oauthUsecase uc.OAuthUsecase, loginLimiter *ratelimit.Limiter) *UserHandler {
 	return &UserHandler{
 		cfg:          cfg,
 		usecase:      usecase,
 		oauthUsecase: oauthUsecase,
+		loginLimiter: loginLimiter,
 	}
 }
 
@@ -137,11 +141,24 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Per-account lockout (independent of the per-IP RateLimit middleware on
+	// this route): only FAILED attempts count, so a legitimate user retrying
+	// a typo never gets blocked from their own account, but repeated wrong
+	// passwords against one email do — the standard mitigation for
+	// credential-stuffing from behind shared/rotating IPs.
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+	if h.loginLimiter.Blocked(email) {
+		response.Error(c, http.StatusTooManyRequests, "TOO_MANY_ATTEMPTS", "Too many failed login attempts. Try again later.", "")
+		return
+	}
+
 	loginResp, err := h.usecase.Login(req.Email, req.Password)
 	if err != nil {
+		h.loginLimiter.RecordFailure(email)
 		response.Error(c, http.StatusBadRequest, "400", "Username/Password Tidak Valid", err.Error())
 		return
 	}
+	h.loginLimiter.Reset(email)
 
 	response.Success(c, http.StatusOK, "login success", loginResp)
 }

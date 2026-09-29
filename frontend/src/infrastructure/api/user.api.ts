@@ -1,5 +1,6 @@
 import type { IUserRepository } from '../../domain/repositories/IUserRepository';
 import type { User } from '../../domain/entities/User';
+import type { TelegramLinkCodeResponse, TelegramLinkRow, TelegramStatus } from '../../domain/entities/Telegram';
 import { apiClient } from '../apiClient';
 
 import type { GetUserUseCaseDTO } from '../../application/user/GetUsersUseCase/GetUserUseCaseDTO';
@@ -63,5 +64,21 @@ export class UserRepositoryImpl implements IUserRepository {
             const message = error instanceof Error ? error.message : String(error);
             throw new Error(`Failed to reset password: ${message}`);
         }
+    }
+
+    async getTelegramStatus(id: number): Promise<TelegramStatus> {
+        return await apiClient.get<TelegramStatus>(`/users/${id}/telegram/status`);
+    }
+
+    async generateTelegramLinkCode(id: number): Promise<TelegramLinkCodeResponse> {
+        return await apiClient.post<TelegramLinkCodeResponse>(`/users/${id}/telegram/link-code`, {});
+    }
+
+    async unlinkTelegram(id: number): Promise<void> {
+        await apiClient.delete(`/users/${id}/telegram/link`);
+    }
+
+    async listTelegramLinks(): Promise<TelegramLinkRow[]> {
+        return await apiClient.get<TelegramLinkRow[]>('/admin/telegram/links');
     }
 }

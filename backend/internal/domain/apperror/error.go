@@ -42,6 +42,14 @@ func Unauthorized(msg string, err error) *AppError {
 	return New(http.StatusUnauthorized, msg, err)
 }
 
+func Conflict(msg string, err error) *AppError {
+	return New(http.StatusConflict, msg, err)
+}
+
+func TooManyRequests(msg string, err error) *AppError {
+	return New(http.StatusTooManyRequests, msg, err)
+}
+
 func Internal(err error) *AppError {
 	return New(http.StatusInternalServerError, "internal server error", err)
 }

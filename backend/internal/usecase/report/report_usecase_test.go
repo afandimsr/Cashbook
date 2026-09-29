@@ -67,3 +67,56 @@ func TestReport_GetCategorySpending_RepoError(t *testing.T) {
 	assert.Error(t, err)
 	repo.AssertExpectations(t)
 }
+
+func TestReport_GetMonthlyCategoryReport_SplitsIncomeAndExpense(t *testing.T) {
+	repo := new(MockTxRepository)
+	u := uc.New(repo)
+
+	may := time.Date(2026, 5, 10, 0, 0, 0, 0, time.UTC)
+	rows := []transaction.ReportTransaction{
+		{CategoryID: 1, CategoryName: "Food", Amount: 100, Type: "expense", Date: may},
+		{CategoryID: 1, CategoryName: "Food", Amount: 50, Type: "expense", Date: may},
+		{CategoryID: 4, CategoryName: "Fuel", Amount: 300, Type: "expense", Date: may},
+		{CategoryID: 2, CategoryName: "Salary", Amount: 999, Type: "income", Date: may},
+	}
+	repo.On("GetCategorySpending", int64(1), 1000, 0, mock.MatchedBy(func(f transaction.Filter) bool {
+		return f.StartDate.Equal(time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC)) &&
+			f.EndDate.Before(time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)) &&
+			f.EndDate.After(time.Date(2026, 5, 31, 23, 59, 59, 0, time.UTC))
+	})).Return(rows, nil).Once()
+
+	res, err := u.GetMonthlyCategoryReport(1, 5, 2026)
+	assert.NoError(t, err)
+	assert.Len(t, res.Income, 1)
+	assert.Equal(t, 999.0, res.Income[0].TotalAmount)
+	assert.Len(t, res.Expense, 2)
+	assert.Equal(t, "Fuel", res.Expense[0].CategoryName) // sorted by amount desc
+	assert.Equal(t, 150.0, res.Expense[1].TotalAmount)
+	repo.AssertExpectations(t)
+}
+
+func TestReport_GetMonthlyCategoryReport_EmptyIsNonNil(t *testing.T) {
+	repo := new(MockTxRepository)
+	u := uc.New(repo)
+
+	repo.On("GetCategorySpending", int64(1), 1000, 0, mock.Anything).
+		Return([]transaction.ReportTransaction{}, nil).Once()
+
+	res, err := u.GetMonthlyCategoryReport(1, 5, 2026)
+	assert.NoError(t, err)
+	assert.NotNil(t, res.Income)
+	assert.NotNil(t, res.Expense)
+	assert.Empty(t, res.Income)
+	assert.Empty(t, res.Expense)
+}
+
+func TestReport_GetMonthlyCategoryReport_RepoError(t *testing.T) {
+	repo := new(MockTxRepository)
+	u := uc.New(repo)
+
+	repo.On("GetCategorySpending", int64(1), 1000, 0, mock.Anything).
+		Return([]transaction.ReportTransaction{}, errors.New("db")).Once()
+
+	_, err := u.GetMonthlyCategoryReport(1, 5, 2026)
+	assert.Error(t, err)
+}
