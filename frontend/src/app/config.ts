@@ -7,7 +7,7 @@ export const config = {
     API_URL: import.meta.env.VITE_API_URL || '/api/v1',
     APP_TITLE: import.meta.env.VITE_APP_TITLE || 'CashBook',
     TELEGRAM_BOT_USERNAME: import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'CashBookBot',
-    APP_VERSION: '1.18.0', // Standard application version
+    APP_VERSION: '1.19.0', // Standard application version
     IS_DEV: import.meta.env.DEV,
     IS_PROD: import.meta.env.PROD,
 };
