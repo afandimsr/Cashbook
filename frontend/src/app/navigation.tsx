@@ -11,6 +11,7 @@ import AutorenewIcon from '@mui/icons-material/Autorenew';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import GroupsIcon from '@mui/icons-material/Groups';
 import SecurityIcon from '@mui/icons-material/Security';
+import TelegramIcon from '@mui/icons-material/Telegram';
 
 export interface NavItem {
     text: string;
@@ -63,6 +64,12 @@ export const menuItems: NavItem[] = [
         roles: ['ADMIN']
     },
     {
+        text: 'Telegram Links',
+        icon: <TelegramIcon />,
+        path: '/dashboard/admin/telegram-links',
+        roles: ['ADMIN']
+    },
+    {
         text: 'Settings',
         icon: <SettingsIcon />,
         children: [
@@ -80,6 +87,11 @@ export const menuItems: NavItem[] = [
                 text: '2FA',
                 icon: <SecurityIcon />,
                 path: '/dashboard/settings/2fa'
+            },
+            {
+                text: 'Telegram',
+                icon: <TelegramIcon />,
+                path: '/dashboard/settings/telegram'
             }
         ]
     }

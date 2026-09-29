@@ -42,6 +42,9 @@ func (u *Usecase) Create(newUser user.User) error {
 	if newUser.Password == "" {
 		return apperror.BadRequest("password is required", nil)
 	}
+	if len(newUser.Roles) == 0 {
+		return apperror.BadRequest("user must have at least one role", nil)
+	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -59,6 +62,9 @@ func (u *Usecase) Create(newUser user.User) error {
 func (u *Usecase) Update(id int64, updatedUser user.User) error {
 	if updatedUser.Email == "" {
 		return apperror.BadRequest("email is required", nil)
+	}
+	if len(updatedUser.Roles) == 0 {
+		return apperror.BadRequest("user must have at least one role", nil)
 	}
 
 	// Check if user exists

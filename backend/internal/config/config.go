@@ -17,6 +17,12 @@ type Config struct {
 	FrontendURL        string
 	CorsAllowedOrigins string
 
+	// BotInternalAPIKey authenticates the Telegram bot service on the
+	// /internal/bot/* routes (see middleware.ServiceAuthMiddleware). Left empty
+	// by default so existing deployments without a bot keep working unchanged;
+	// ServiceAuthMiddleware denies every request while it's empty.
+	BotInternalAPIKey string
+
 	GoogleClientID     string
 	GoogleClientSecret string
 	GoogleRedirectURL  string
@@ -56,6 +62,8 @@ func Load() *Config {
 		JWTSecret:     getEnv("JWT_SECRET", "default-secret"),
 		ClientAuthURL: getEnv("CLIENT_AUTH_URL", ""),
 		FrontendURL:   getEnv("FRONTEND_URL", ""),
+
+		BotInternalAPIKey: getEnv("BOT_INTERNAL_API_KEY", ""),
 
 		GoogleClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),

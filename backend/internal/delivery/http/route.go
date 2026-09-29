@@ -17,17 +17,22 @@ func RegisterRoutes(
 	twofaHandler *handler.TwoFAHandler,
 	mfaSettingsHandler *handler.MFASettingsHandler,
 	sharedExpenseHandler *handler.SharedExpenseHandler,
+	botHandler *handler.BotHandler,
+	botServiceAuth gin.HandlerFunc,
+	loginRateLimit gin.HandlerFunc,
+	twoFARateLimit gin.HandlerFunc,
+	linkCodeRateLimit gin.HandlerFunc,
 ) {
 	api := r.Group("/api/v1")
 
 	// auth routes (public)
-	api.POST("/login", userHandler.Login)
+	api.POST("/login", loginRateLimit, userHandler.Login)
 	api.GET("/auth/google/login", userHandler.GoogleLogin)
 	api.GET("/auth/google/callback", userHandler.GoogleCallback)
 
 	// 2FA routes (public — used during login)
-	api.POST("/2fa/verify", twofaHandler.VerifyLogin)
-	api.POST("/2fa/backup/verify", twofaHandler.VerifyBackupCode)
+	api.POST("/2fa/verify", twoFARateLimit, twofaHandler.VerifyLogin)
+	api.POST("/2fa/backup/verify", twoFARateLimit, twofaHandler.VerifyBackupCode)
 
 	// health check
 	api.GET("/health", healthHandler)
@@ -52,6 +57,11 @@ func RegisterRoutes(
 		users.PUT("/:id", userHandler.UpdateUser)
 		users.DELETE("/:id", userHandler.DeleteUser)
 		users.POST("/:id/reset-password", userHandler.ResetPassword)
+
+		// admin managing another user's Telegram link (self-service is under /telegram below)
+		users.POST("/:id/telegram/link-code", botHandler.AdminGenerateLinkCode)
+		users.GET("/:id/telegram/status", botHandler.AdminGetLinkStatus)
+		users.DELETE("/:id/telegram/link", botHandler.AdminUnlink)
 	}
 
 	// admin MFA settings (protected + admin only)
@@ -60,6 +70,7 @@ func RegisterRoutes(
 	{
 		admin.GET("/mfa-settings", mfaSettingsHandler.GetSettings)
 		admin.PUT("/mfa-settings", mfaSettingsHandler.UpdateSettings)
+		admin.GET("/telegram/links", botHandler.AdminListLinks)
 	}
 
 	// user MFA settings (protected + admin only) - alternative route
@@ -118,6 +129,29 @@ func RegisterRoutes(
 
 	// shared expense routes
 	sharedExpenseHandler.RegisterRoutes(api)
+
+	// telegram link-code generation (protected, called from the app by an end-user)
+	telegramRoutes := api.Group("/telegram")
+	telegramRoutes.Use(middleware.AuthMiddleware(), middleware.RoleGuard("ADMIN", "USER"))
+	{
+		telegramRoutes.POST("/link-code", linkCodeRateLimit, botHandler.GenerateLinkCode)
+		telegramRoutes.GET("/status", botHandler.GetLinkStatus)
+		telegramRoutes.DELETE("/link", botHandler.Unlink)
+	}
+
+	// internal bot routes (service-to-service, called only by the Telegram bot)
+	internalBot := api.Group("/internal/bot")
+	internalBot.Use(botServiceAuth)
+	{
+		internalBot.POST("/link", botHandler.Link)
+		internalBot.GET("/links", botHandler.ListLinks)
+		internalBot.GET("/context", botHandler.GetContext)
+		internalBot.POST("/transactions", botHandler.CreateTransaction)
+		internalBot.GET("/summary", botHandler.GetSummary)
+		internalBot.GET("/reports/spending", botHandler.GetCategorySpending)
+		internalBot.GET("/reports/monthly", botHandler.GetMonthlyReport)
+		internalBot.GET("/budgets", botHandler.GetBudgetStatus)
+	}
 }
 
 func healthHandler(c *gin.Context) {

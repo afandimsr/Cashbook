@@ -3,6 +3,7 @@ import { Box, IconButton, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockResetIcon from '@mui/icons-material/LockReset';
+import TelegramIcon from '@mui/icons-material/Telegram';
 import type { User } from '../../../../domain/entities/User';
 
 interface UserTableActionsProps {
@@ -10,11 +11,24 @@ interface UserTableActionsProps {
     onEdit: (user: User) => void;
     onDelete: (user: User) => void;
     onResetPassword: (user: User) => void;
+    onManageTelegram: (user: User) => void;
 }
 
-export const UserTableActions: React.FC<UserTableActionsProps> = ({ user, onEdit, onDelete, onResetPassword }) => {
+export const UserTableActions: React.FC<UserTableActionsProps> = ({ user, onEdit, onDelete, onResetPassword, onManageTelegram }) => {
     return (
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+            <Tooltip title="Manage Telegram">
+                <IconButton
+                    onClick={() => onManageTelegram(user)}
+                    size="small"
+                    sx={{
+                        color: 'info.main',
+                        '&:hover': { bgcolor: 'info.lighter' }
+                    }}
+                >
+                    <TelegramIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
             <Tooltip title="Reset Password">
                 <IconButton
                     onClick={() => onResetPassword(user)}

@@ -18,6 +18,7 @@ import { useUserStore } from '../../../state/userStore';
 import { useAuthStore } from '../../../state/authStore';
 import { UserFormDialog } from './UserFormDialog';
 import { ResetPasswordDialog } from './ResetPasswordDialog';
+import { TelegramManageDialog } from './TelegramManageDialog';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import type { User } from '../../../domain/entities/User';
 
@@ -27,11 +28,15 @@ import { UserTableActions } from './components/UserTableActions';
 import { UserTableSkeleton } from './components/UserTableSkeleton';
 
 export const UserListPage: React.FC = () => {
-    const { users, isLoading, fetchUsers, addUser, editUser, removeUser, resetPassword } = useUserStore();
+    const {
+        users, isLoading, fetchUsers, addUser, editUser, removeUser, resetPassword,
+        telegramStatus, fetchTelegramStatus, generateTelegramLinkCode, unlinkTelegram,
+    } = useUserStore();
     const { user: currentUser } = useAuthStore();
     const [openForm, setOpenForm] = useState(false);
     const [openConfirm, setOpenConfirm] = useState(false);
     const [openReset, setOpenReset] = useState(false);
+    const [openTelegram, setOpenTelegram] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [snack, setSnack] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ open: false, message: '', severity: 'success' });
@@ -65,6 +70,11 @@ export const UserListPage: React.FC = () => {
     const handleDelete = (user: User) => {
         setSelectedUser(user);
         setOpenConfirm(true);
+    };
+
+    const handleManageTelegram = (user: User) => {
+        setSelectedUser(user);
+        setOpenTelegram(true);
     };
 
     const handleSave = async (data: any) => {
@@ -185,6 +195,7 @@ export const UserListPage: React.FC = () => {
                                             onEdit={handleEdit}
                                             onDelete={handleDelete}
                                             onResetPassword={handleResetPassword}
+                                            onManageTelegram={handleManageTelegram}
                                         />
                                     )}
                                 </TableCell>
@@ -215,6 +226,17 @@ export const UserListPage: React.FC = () => {
                 user={selectedUser}
                 onClose={() => setOpenReset(false)}
                 onReset={handleDoResetPassword}
+            />
+
+            <TelegramManageDialog
+                open={openTelegram}
+                user={selectedUser}
+                status={telegramStatus}
+                isLoading={isLoading}
+                onClose={() => setOpenTelegram(false)}
+                onLoadStatus={fetchTelegramStatus}
+                onGenerateCode={generateTelegramLinkCode}
+                onUnlink={unlinkTelegram}
             />
 
             <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack({ ...snack, open: false })}>
