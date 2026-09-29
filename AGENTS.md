@@ -50,7 +50,7 @@ npx tsc --noEmit      # fast type check
 npm run build         # full build
 npm run dev           # dev server
 ```
-Full stack: `docker compose up -d --build backend frontend` then `docker compose run --rm migrate`.
+Full stack: `docker compose up -d --build backend frontend bot` then `docker compose run --rm migrate`.
 
 ## Top cross-cutting rules
 

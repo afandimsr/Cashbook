@@ -37,6 +37,22 @@ services:
       - my_develop_network
     restart: always
 
+  # --- Service Telegram Bot ---
+  bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    container_name: go-cashbook-bot
+    # Long-polling bot: no ports. BACKEND_BASE_URL in bot/.env should be
+    # http://go-cashbook-backend:8181 to reach the backend on this network.
+    env_file:
+      - ./bot/.env
+    depends_on:
+      - backend
+    networks:
+      - my_develop_network
+    restart: always
+
   migrate:
     image: migrate/migrate
     volumes:
