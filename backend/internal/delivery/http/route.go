@@ -151,6 +151,7 @@ func RegisterRoutes(
 		internalBot.GET("/reports/spending", botHandler.GetCategorySpending)
 		internalBot.GET("/reports/monthly", botHandler.GetMonthlyReport)
 		internalBot.GET("/budgets", botHandler.GetBudgetStatus)
+		internalBot.POST("/recurring/process", botHandler.ProcessDueRecurring)
 	}
 }
 

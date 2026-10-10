@@ -54,6 +54,13 @@ func (m *MockBackend) ListLinks(ctx context.Context) ([]backend.TelegramLink, er
 	args := m.Called(ctx)
 	return args.Get(0).([]backend.TelegramLink), args.Error(1)
 }
+func (m *MockBackend) ProcessDueRecurring(ctx context.Context, chatID int64) (*backend.ProcessDueResult, error) {
+	args := m.Called(ctx, chatID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*backend.ProcessDueResult), args.Error(1)
+}
 
 type MockLLM struct{ mock.Mock }
 
@@ -396,4 +403,90 @@ func TestBudgets_NotLinked(t *testing.T) {
 	reply, err := svc.Budgets(context.Background(), 999, 9, 2026)
 	assert.NoError(t, err)
 	assert.Contains(t, reply, "belum terhubung")
+}
+
+func TestProcessDue_ListsCreatedTransactions(t *testing.T) {
+	be := new(MockBackend)
+	svc := service.New(be, new(MockLLM))
+
+	be.On("ProcessDueRecurring", mock.Anything, int64(555)).Return(&backend.ProcessDueResult{
+		Processed: []backend.ProcessedRecurring{
+			{CategoryName: "Listrik", Amount: 300000, Type: "expense", Note: "PLN", Frequency: "monthly"},
+			{CategoryName: "Gaji", Amount: 5000000, Type: "income", Frequency: "monthly"},
+			{CategoryName: "Makanan", Amount: 25000, Type: "expense", Frequency: "daily"},
+		},
+	}, nil).Once()
+
+	reply, err := svc.ProcessDue(context.Background(), 555)
+	assert.NoError(t, err)
+	assert.Contains(t, reply, "Transaksi berulang diproses (3):")
+	assert.Contains(t, reply, "- Pengeluaran Rp300.000 – Listrik (bulanan): PLN\n")
+	assert.Contains(t, reply, "- Pemasukan Rp5.000.000 – Gaji (bulanan)\n")
+	assert.Contains(t, reply, "- Pengeluaran Rp25.000 – Makanan (harian)\n")
+	assert.Contains(t, reply, "Total pemasukan: Rp5.000.000")
+	assert.Contains(t, reply, "Total pengeluaran: Rp325.000")
+	assert.NotContains(t, reply, "gagal")
+}
+
+func TestProcessDue_NothingDue(t *testing.T) {
+	be := new(MockBackend)
+	svc := service.New(be, new(MockLLM))
+
+	be.On("ProcessDueRecurring", mock.Anything, int64(555)).
+		Return(&backend.ProcessDueResult{Processed: []backend.ProcessedRecurring{}}, nil).Once()
+
+	reply, err := svc.ProcessDue(context.Background(), 555)
+	assert.NoError(t, err)
+	assert.Equal(t, "Tidak ada transaksi berulang yang jatuh tempo saat ini.", reply)
+}
+
+func TestProcessDue_PartialFailure(t *testing.T) {
+	be := new(MockBackend)
+	svc := service.New(be, new(MockLLM))
+
+	be.On("ProcessDueRecurring", mock.Anything, int64(555)).Return(&backend.ProcessDueResult{
+		Processed: []backend.ProcessedRecurring{{Amount: 10000, Type: "expense", Frequency: "weekly"}},
+		Failed:    2,
+	}, nil).Once()
+
+	reply, err := svc.ProcessDue(context.Background(), 555)
+	assert.NoError(t, err)
+	assert.Contains(t, reply, "- Pengeluaran Rp10.000 – tanpa kategori (mingguan)")
+	assert.Contains(t, reply, "⚠️ 2 transaksi berulang gagal diproses")
+}
+
+func TestProcessDue_AllFailed(t *testing.T) {
+	be := new(MockBackend)
+	svc := service.New(be, new(MockLLM))
+
+	be.On("ProcessDueRecurring", mock.Anything, int64(555)).
+		Return(&backend.ProcessDueResult{Processed: []backend.ProcessedRecurring{}, Failed: 1}, nil).Once()
+
+	reply, err := svc.ProcessDue(context.Background(), 555)
+	assert.NoError(t, err)
+	assert.Contains(t, reply, "Tidak ada transaksi berulang yang berhasil diproses.")
+	assert.Contains(t, reply, "⚠️ 1 transaksi berulang gagal diproses")
+}
+
+func TestProcessDue_NotLinked(t *testing.T) {
+	be := new(MockBackend)
+	svc := service.New(be, new(MockLLM))
+
+	be.On("ProcessDueRecurring", mock.Anything, int64(999)).
+		Return(nil, &backend.APIError{StatusCode: 404}).Once()
+
+	reply, err := svc.ProcessDue(context.Background(), 999)
+	assert.NoError(t, err)
+	assert.Contains(t, reply, "belum terhubung")
+}
+
+func TestProcessDue_ServerError(t *testing.T) {
+	be := new(MockBackend)
+	svc := service.New(be, new(MockLLM))
+
+	be.On("ProcessDueRecurring", mock.Anything, int64(555)).
+		Return(nil, &backend.APIError{StatusCode: 500}).Once()
+
+	_, err := svc.ProcessDue(context.Background(), 555)
+	assert.Error(t, err)
 }

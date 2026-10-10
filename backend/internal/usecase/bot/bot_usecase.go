@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"log"
 	"math/big"
 	"sort"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/afandimsr/cashbook-backend/internal/domain/transaction"
 	"github.com/afandimsr/cashbook-backend/internal/domain/user"
 	categoryUC "github.com/afandimsr/cashbook-backend/internal/usecase/category"
+	recurringUC "github.com/afandimsr/cashbook-backend/internal/usecase/recurring_transaction"
 	reportUC "github.com/afandimsr/cashbook-backend/internal/usecase/report"
 	transactionUC "github.com/afandimsr/cashbook-backend/internal/usecase/transaction"
 )
@@ -50,6 +52,25 @@ type userLookup interface {
 // by budget.Usecase; declared here for the same reason as userLookup.
 type budgetLookup interface {
 	GetBudgets(userID int64, month, year int) ([]budget.Budget, error)
+}
+
+// recurringProcessor is the minimal recurring accessor this usecase needs,
+// satisfied by recurring_transaction.Usecase; declared here for the same
+// reason as userLookup.
+type recurringProcessor interface {
+	ProcessDueForUser(ctx context.Context, userID int64) (recurringUC.ProcessResult, error)
+}
+
+// ProcessedRecurring is one generated transaction with its category name
+// resolved, so the bot can reply without a second lookup.
+type ProcessedRecurring struct {
+	recurringUC.ProcessedItem
+	CategoryName string `json:"category_name"`
+}
+
+type ProcessDueResult struct {
+	Processed []ProcessedRecurring `json:"processed"`
+	Failed    int                  `json:"failed"`
 }
 
 // BudgetStatus is one category budget joined with that month's actual
@@ -96,6 +117,7 @@ type Usecase interface {
 	GetCategorySpending(ctx context.Context, chatID int64, month, year int) ([]reportUC.CategoryReport, error)
 	GetMonthlyReport(ctx context.Context, chatID int64, month, year int) (reportUC.MonthlyCategoryReport, error)
 	GetBudgetStatus(ctx context.Context, chatID int64, month, year int) ([]BudgetStatus, error)
+	ProcessDueRecurring(ctx context.Context, chatID int64) (ProcessDueResult, error)
 }
 
 type usecase struct {
@@ -105,9 +127,10 @@ type usecase struct {
 	reportUC      reportUC.Usecase
 	userUC        userLookup
 	budgetUC      budgetLookup
+	recurringUC   recurringProcessor
 }
 
-func New(telegramRepo telegram.Repository, categoryUC categoryUC.Usecase, transactionUC transactionUC.Usecase, reportUC reportUC.Usecase, userUC userLookup, budgetUC budgetLookup) Usecase {
+func New(telegramRepo telegram.Repository, categoryUC categoryUC.Usecase, transactionUC transactionUC.Usecase, reportUC reportUC.Usecase, userUC userLookup, budgetUC budgetLookup, recurringUC recurringProcessor) Usecase {
 	return &usecase{
 		telegramRepo:  telegramRepo,
 		categoryUC:    categoryUC,
@@ -115,6 +138,7 @@ func New(telegramRepo telegram.Repository, categoryUC categoryUC.Usecase, transa
 		reportUC:      reportUC,
 		userUC:        userUC,
 		budgetUC:      budgetUC,
+		recurringUC:   recurringUC,
 	}
 }
 
@@ -259,6 +283,40 @@ func (u *usecase) GetMonthlyReport(ctx context.Context, chatID int64, month, yea
 		return reportUC.MonthlyCategoryReport{}, err
 	}
 	return u.reportUC.GetMonthlyCategoryReport(userID, month, year)
+}
+
+// ProcessDueRecurring generates transactions for the linked user's due
+// recurring templates, the same as the web app's "process due" action.
+func (u *usecase) ProcessDueRecurring(ctx context.Context, chatID int64) (ProcessDueResult, error) {
+	userID, err := u.resolveUserID(ctx, chatID)
+	if err != nil {
+		return ProcessDueResult{}, err
+	}
+
+	result, err := u.recurringUC.ProcessDueForUser(ctx, userID)
+	if err != nil {
+		return ProcessDueResult{}, err
+	}
+
+	out := ProcessDueResult{Processed: []ProcessedRecurring{}, Failed: result.Failed}
+	if len(result.Processed) == 0 {
+		return out, nil
+	}
+
+	// The transactions are already committed, so a failed name lookup only
+	// leaves names blank rather than failing the whole call.
+	names := map[int64]string{}
+	categories, err := u.categoryUC.GetAllByUserID(userID)
+	if err != nil {
+		log.Printf("bot process due: load category names for user %d: %v", userID, err)
+	}
+	for _, c := range categories {
+		names[c.ID] = c.Name
+	}
+	for _, item := range result.Processed {
+		out.Processed = append(out.Processed, ProcessedRecurring{ProcessedItem: item, CategoryName: names[item.CategoryID]})
+	}
+	return out, nil
 }
 
 // GetBudgetStatus returns every budget set for the month (limit > 0) with

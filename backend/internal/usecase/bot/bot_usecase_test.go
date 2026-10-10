@@ -2,6 +2,7 @@ package bot_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/afandimsr/cashbook-backend/internal/domain/transaction"
 	"github.com/afandimsr/cashbook-backend/internal/domain/user"
 	uc "github.com/afandimsr/cashbook-backend/internal/usecase/bot"
+	recurringUC "github.com/afandimsr/cashbook-backend/internal/usecase/recurring_transaction"
 	reportUC "github.com/afandimsr/cashbook-backend/internal/usecase/report"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -115,7 +117,7 @@ func newTestUsecase() (uc.Usecase, *MockTelegramRepo, *MockCategoryUsecase, *Moc
 	txUC := new(MockTransactionUsecase)
 	repUC := new(MockReportUsecase)
 	userUC := new(MockUserUsecase)
-	return uc.New(tgRepo, catUC, txUC, repUC, userUC, new(MockBudgetUsecase)), tgRepo, catUC, txUC, repUC, userUC
+	return uc.New(tgRepo, catUC, txUC, repUC, userUC, new(MockBudgetUsecase), new(MockRecurringProcessor)), tgRepo, catUC, txUC, repUC, userUC
 }
 
 type MockBudgetUsecase struct{ mock.Mock }
@@ -359,7 +361,7 @@ func newBudgetTestUsecase() (uc.Usecase, *MockTelegramRepo, *MockCategoryUsecase
 	catUC := new(MockCategoryUsecase)
 	repUC := new(MockReportUsecase)
 	budUC := new(MockBudgetUsecase)
-	return uc.New(tgRepo, catUC, new(MockTransactionUsecase), repUC, new(MockUserUsecase), budUC), tgRepo, catUC, repUC, budUC
+	return uc.New(tgRepo, catUC, new(MockTransactionUsecase), repUC, new(MockUserUsecase), budUC, new(MockRecurringProcessor)), tgRepo, catUC, repUC, budUC
 }
 
 func TestBot_GetBudgetStatus_JoinsBudgetsCategoriesAndSpend(t *testing.T) {
@@ -423,4 +425,82 @@ func TestBot_GetBudgetStatus_NotLinked(t *testing.T) {
 	_, err := u.GetBudgetStatus(context.Background(), 999, 9, 2026)
 	assert.ErrorIs(t, err, telegram.ErrLinkNotFound)
 	budUC.AssertNotCalled(t, "GetBudgets", mock.Anything, mock.Anything, mock.Anything)
+}
+
+type MockRecurringProcessor struct{ mock.Mock }
+
+func (m *MockRecurringProcessor) ProcessDueForUser(ctx context.Context, userID int64) (recurringUC.ProcessResult, error) {
+	args := m.Called(ctx, userID)
+	return args.Get(0).(recurringUC.ProcessResult), args.Error(1)
+}
+
+func newProcessDueTestUsecase() (uc.Usecase, *MockTelegramRepo, *MockCategoryUsecase, *MockRecurringProcessor) {
+	tgRepo := new(MockTelegramRepo)
+	catUC := new(MockCategoryUsecase)
+	recUC := new(MockRecurringProcessor)
+	u := uc.New(tgRepo, catUC, new(MockTransactionUsecase), new(MockReportUsecase), new(MockUserUsecase), new(MockBudgetUsecase), recUC)
+	return u, tgRepo, catUC, recUC
+}
+
+func TestBot_ProcessDueRecurring_AddsCategoryNames(t *testing.T) {
+	u, tgRepo, catUC, recUC := newProcessDueTestUsecase()
+
+	tgRepo.On("FindLinkByChatID", mock.Anything, int64(555)).
+		Return(telegram.UserTelegramLink{UserID: 7}, nil).Once()
+	recUC.On("ProcessDueForUser", mock.Anything, int64(7)).Return(recurringUC.ProcessResult{
+		Processed: []recurringUC.ProcessedItem{{RecurringID: 1, CategoryID: 3, Amount: 50}},
+		Failed:    1,
+	}, nil).Once()
+	catUC.On("GetAllByUserID", int64(7)).Return([]category.Category{{ID: 3, Name: "Listrik"}}, nil).Once()
+
+	got, err := u.ProcessDueRecurring(context.Background(), 555)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, got.Failed)
+	assert.Len(t, got.Processed, 1)
+	assert.Equal(t, "Listrik", got.Processed[0].CategoryName)
+	assert.Equal(t, float64(50), got.Processed[0].Amount)
+	recUC.AssertExpectations(t)
+	catUC.AssertExpectations(t)
+}
+
+func TestBot_ProcessDueRecurring_NothingDueSkipsCategoryLookup(t *testing.T) {
+	u, tgRepo, catUC, recUC := newProcessDueTestUsecase()
+
+	tgRepo.On("FindLinkByChatID", mock.Anything, int64(555)).
+		Return(telegram.UserTelegramLink{UserID: 7}, nil).Once()
+	recUC.On("ProcessDueForUser", mock.Anything, int64(7)).
+		Return(recurringUC.ProcessResult{Processed: []recurringUC.ProcessedItem{}}, nil).Once()
+
+	got, err := u.ProcessDueRecurring(context.Background(), 555)
+	assert.NoError(t, err)
+	assert.NotNil(t, got.Processed)
+	assert.Empty(t, got.Processed)
+	catUC.AssertNotCalled(t, "GetAllByUserID", mock.Anything)
+}
+
+func TestBot_ProcessDueRecurring_CategoryLookupFailureKeepsResult(t *testing.T) {
+	u, tgRepo, catUC, recUC := newProcessDueTestUsecase()
+
+	tgRepo.On("FindLinkByChatID", mock.Anything, int64(555)).
+		Return(telegram.UserTelegramLink{UserID: 7}, nil).Once()
+	recUC.On("ProcessDueForUser", mock.Anything, int64(7)).Return(recurringUC.ProcessResult{
+		Processed: []recurringUC.ProcessedItem{{RecurringID: 1, CategoryID: 3}},
+	}, nil).Once()
+	catUC.On("GetAllByUserID", int64(7)).Return([]category.Category(nil), errors.New("db")).Once()
+
+	got, err := u.ProcessDueRecurring(context.Background(), 555)
+	assert.NoError(t, err) // transactions are already committed
+	assert.Len(t, got.Processed, 1)
+	assert.Empty(t, got.Processed[0].CategoryName)
+}
+
+func TestBot_ProcessDueRecurring_NotLinked(t *testing.T) {
+	u, tgRepo, _, recUC := newProcessDueTestUsecase()
+
+	tgRepo.On("FindLinkByChatID", mock.Anything, int64(999)).
+		Return(telegram.UserTelegramLink{}, telegram.ErrLinkNotFound).Once()
+
+	_, err := u.ProcessDueRecurring(context.Background(), 999)
+	assert.ErrorIs(t, err, telegram.ErrLinkNotFound)
+	recUC.AssertNotCalled(t, "ProcessDueForUser", mock.Anything, mock.Anything)
 }

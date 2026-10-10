@@ -87,6 +87,23 @@ type TelegramLink struct {
 	TelegramUsername string `json:"telegram_username,omitempty"`
 }
 
+// ProcessedRecurring is one transaction the backend generated from a due
+// recurring template.
+type ProcessedRecurring struct {
+	CategoryName string  `json:"category_name"`
+	Amount       float64 `json:"amount"`
+	Type         string  `json:"type"` // "income" or "expense"
+	Note         string  `json:"note"`
+	Frequency    string  `json:"frequency"` // "daily", "weekly" or "monthly"
+}
+
+// ProcessDueResult is the outcome of one process-due run. Failed templates
+// stay due on the backend and are retried on the next run.
+type ProcessDueResult struct {
+	Processed []ProcessedRecurring `json:"processed"`
+	Failed    int                  `json:"failed"`
+}
+
 type CreateTransactionRequest struct {
 	ChatID     int64   `json:"chat_id"`
 	CategoryID int64   `json:"category_id"`
@@ -156,6 +173,15 @@ func (c *Client) GetBudgetStatus(ctx context.Context, chatID int64, month, year 
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *Client) ProcessDueRecurring(ctx context.Context, chatID int64) (*ProcessDueResult, error) {
+	var out ProcessDueResult
+	req := map[string]any{"chat_id": chatID}
+	if err := c.doJSON(ctx, http.MethodPost, "/api/v1/internal/bot/recurring/process", req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 func (c *Client) doJSON(ctx context.Context, method, path string, reqBody, out any) error {

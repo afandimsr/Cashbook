@@ -466,6 +466,35 @@ func (h *BotHandler) GetBudgetStatus(c *gin.Context) {
 	response.Success(c, http.StatusOK, "success", statuses)
 }
 
+// ProcessDueRecurring godoc
+// @Summary      [Internal] Process due recurring transactions for a linked user
+// @Description  Resolves chat_id to a user and generates transactions for that user's due recurring templates. Returns the generated items (with category names) and how many failed. Internal service auth only.
+// @Tags         Telegram
+// @Accept       json
+// @Produce      json
+// @Success      200 {object} response.SuccessResponse
+// @Failure      400 {object} response.ErrorSwaggerResponse
+// @Failure      401 {object} response.ErrorSwaggerResponse
+// @Failure      404 {object} response.ErrorSwaggerResponse
+// @Router       /internal/bot/recurring/process [post]
+func (h *BotHandler) ProcessDueRecurring(c *gin.Context) {
+	var req struct {
+		ChatID int64 `json:"chat_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.Error(apperror.BadRequest("invalid request", err))
+		return
+	}
+
+	result, err := h.usecase.ProcessDueRecurring(c.Request.Context(), req.ChatID)
+	if err != nil {
+		c.Error(mapBotError(err))
+		return
+	}
+
+	response.Success(c, http.StatusOK, "processed", result)
+}
+
 // parseMonthYear reads optional month/year query params, defaulting to the
 // current month and rejecting out-of-range values with a 400.
 func parseMonthYear(c *gin.Context) (int, int, error) {

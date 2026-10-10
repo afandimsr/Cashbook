@@ -1,6 +1,7 @@
 package recurring_transaction_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -21,45 +22,23 @@ func (m *MockRecurringRepository) FindAllByUserID(userID int64) ([]rt.RecurringT
 	return args.Get(0).([]rt.RecurringTransaction), args.Error(1)
 }
 
-func (m *MockRecurringRepository) FindDue(now time.Time) ([]rt.RecurringTransaction, error) {
-	args := m.Called(now)
+func (m *MockRecurringRepository) FindDueByUserID(userID int64, now time.Time) ([]rt.RecurringTransaction, error) {
+	args := m.Called(userID, now)
 	return args.Get(0).([]rt.RecurringTransaction), args.Error(1)
 }
 
-func (m *MockRecurringRepository) Save(r *rt.RecurringTransaction) error   { return m.Called(r).Error(0) }
-func (m *MockRecurringRepository) Update(r *rt.RecurringTransaction) error { return m.Called(r).Error(0) }
-func (m *MockRecurringRepository) Delete(id int64) error                   { return m.Called(id).Error(0) }
-func (m *MockRecurringRepository) UpdateLastProcessed(id int64, t time.Time) error {
-	return m.Called(id, t).Error(0)
+func (m *MockRecurringRepository) Save(r *rt.RecurringTransaction) error { return m.Called(r).Error(0) }
+func (m *MockRecurringRepository) Update(r *rt.RecurringTransaction) error {
+	return m.Called(r).Error(0)
 }
-
-// Minimal transaction.Repository mock (only Save is exercised here).
-type MockTxRepository struct{ mock.Mock }
-
-func (m *MockTxRepository) FindAllByUserID(userID int64, limit, offset int, f transaction.Filter) ([]transaction.Transaction, error) {
-	args := m.Called(userID, limit, offset, f)
-	return args.Get(0).([]transaction.Transaction), args.Error(1)
+func (m *MockRecurringRepository) Delete(id int64) error { return m.Called(id).Error(0) }
+func (m *MockRecurringRepository) ProcessOne(ctx context.Context, id int64, tx *transaction.Transaction, now time.Time) error {
+	return m.Called(ctx, id, tx, now).Error(0)
 }
-func (m *MockTxRepository) GetTotalAndSum(userID int64, f transaction.Filter) (int64, float64, error) {
-	args := m.Called(userID, f)
-	return args.Get(0).(int64), args.Get(1).(float64), args.Error(2)
-}
-func (m *MockTxRepository) GetCategorySpending(userID int64, limit, offset int, f transaction.Filter) ([]transaction.ReportTransaction, error) {
-	args := m.Called(userID, limit, offset, f)
-	return args.Get(0).([]transaction.ReportTransaction), args.Error(1)
-}
-func (m *MockTxRepository) FindByID(id int64) (transaction.Transaction, error) {
-	args := m.Called(id)
-	return args.Get(0).(transaction.Transaction), args.Error(1)
-}
-func (m *MockTxRepository) Save(t *transaction.Transaction) error   { return m.Called(t).Error(0) }
-func (m *MockTxRepository) Update(t *transaction.Transaction) error { return m.Called(t).Error(0) }
-func (m *MockTxRepository) Delete(id int64) error                   { return m.Called(id).Error(0) }
 
 func TestRecurring_Create_SetsUserAndDefaultStart(t *testing.T) {
 	repo := new(MockRecurringRepository)
-	txRepo := new(MockTxRepository)
-	u := uc.New(repo, txRepo)
+	u := uc.New(repo)
 
 	repo.On("Save", mock.MatchedBy(func(r *rt.RecurringTransaction) bool {
 		return r.UserID == 11 && !r.StartDate.IsZero()
@@ -74,8 +53,7 @@ func TestRecurring_Create_SetsUserAndDefaultStart(t *testing.T) {
 
 func TestRecurring_Create_KeepsProvidedStart(t *testing.T) {
 	repo := new(MockRecurringRepository)
-	txRepo := new(MockTxRepository)
-	u := uc.New(repo, txRepo)
+	u := uc.New(repo)
 
 	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	repo.On("Save", mock.MatchedBy(func(r *rt.RecurringTransaction) bool {
@@ -90,8 +68,7 @@ func TestRecurring_Create_KeepsProvidedStart(t *testing.T) {
 
 func TestRecurring_Create_SaveError(t *testing.T) {
 	repo := new(MockRecurringRepository)
-	txRepo := new(MockTxRepository)
-	u := uc.New(repo, txRepo)
+	u := uc.New(repo)
 
 	repo.On("Save", mock.Anything).Return(errors.New("db")).Once()
 
@@ -102,61 +79,92 @@ func TestRecurring_Create_SaveError(t *testing.T) {
 
 func TestRecurring_ProcessDue_CreatesTransactions(t *testing.T) {
 	repo := new(MockRecurringRepository)
-	txRepo := new(MockTxRepository)
-	u := uc.New(repo, txRepo)
+	u := uc.New(repo)
 
 	due := []rt.RecurringTransaction{
-		{ID: 1, UserID: 2, CategoryID: 3, Amount: 50, Type: "expense", Note: "Netflix"},
-		{ID: 2, UserID: 2, CategoryID: 4, Amount: 20, Type: "expense", Note: "Spotify"},
+		{ID: 1, UserID: 2, CategoryID: 3, Amount: 50, Type: "expense", Note: "Netflix", Frequency: rt.Monthly},
+		{ID: 2, UserID: 2, CategoryID: 4, Amount: 20, Type: "expense", Note: "Spotify", Frequency: rt.Monthly},
 	}
-	repo.On("FindDue", mock.Anything).Return(due, nil).Once()
-	txRepo.On("Save", mock.MatchedBy(func(t *transaction.Transaction) bool {
-		return t.Note == "Netflix (Auto-generated)"
-	})).Return(nil).Once()
-	txRepo.On("Save", mock.MatchedBy(func(t *transaction.Transaction) bool {
-		return t.Note == "Spotify (Auto-generated)"
-	})).Return(nil).Once()
-	repo.On("UpdateLastProcessed", int64(1), mock.Anything).Return(nil).Once()
-	repo.On("UpdateLastProcessed", int64(2), mock.Anything).Return(nil).Once()
+	repo.On("FindDueByUserID", int64(2), mock.Anything).Return(due, nil).Once()
+	repo.On("ProcessOne", mock.Anything, int64(1), mock.MatchedBy(func(tx *transaction.Transaction) bool {
+		return tx.Note == "Netflix (Auto-generated)" && tx.UserID == 2 && tx.CategoryID == 3
+	}), mock.Anything).Run(func(args mock.Arguments) {
+		args.Get(2).(*transaction.Transaction).ID = 100
+	}).Return(nil).Once()
+	repo.On("ProcessOne", mock.Anything, int64(2), mock.MatchedBy(func(tx *transaction.Transaction) bool {
+		return tx.Note == "Spotify (Auto-generated)"
+	}), mock.Anything).Return(nil).Once()
 
-	err := u.ProcessDueTransactions()
+	got, err := u.ProcessDueForUser(context.Background(), 2)
 	assert.NoError(t, err)
+	assert.Equal(t, 0, got.Failed)
+	assert.Len(t, got.Processed, 2)
+	assert.Equal(t, uc.ProcessedItem{
+		RecurringID: 1, TransactionID: 100, CategoryID: 3, Amount: 50, Type: "expense", Note: "Netflix", Frequency: rt.Monthly,
+	}, got.Processed[0])
 	repo.AssertExpectations(t)
-	txRepo.AssertExpectations(t)
 }
 
-func TestRecurring_ProcessDue_SkipsUpdateOnSaveError(t *testing.T) {
+func TestRecurring_ProcessDue_NothingDue(t *testing.T) {
 	repo := new(MockRecurringRepository)
-	txRepo := new(MockTxRepository)
-	u := uc.New(repo, txRepo)
+	u := uc.New(repo)
+
+	repo.On("FindDueByUserID", int64(2), mock.Anything).Return([]rt.RecurringTransaction{}, nil).Once()
+
+	got, err := u.ProcessDueForUser(context.Background(), 2)
+	assert.NoError(t, err)
+	assert.NotNil(t, got.Processed) // serialized as [] not null
+	assert.Empty(t, got.Processed)
+	assert.Equal(t, 0, got.Failed)
+	repo.AssertNotCalled(t, "ProcessOne", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+}
+
+func TestRecurring_ProcessDue_SkipsAlreadyProcessed(t *testing.T) {
+	repo := new(MockRecurringRepository)
+	u := uc.New(repo)
 
 	due := []rt.RecurringTransaction{{ID: 1, UserID: 2, Note: "x"}}
-	repo.On("FindDue", mock.Anything).Return(due, nil).Once()
-	txRepo.On("Save", mock.Anything).Return(errors.New("db")).Once()
+	repo.On("FindDueByUserID", int64(2), mock.Anything).Return(due, nil).Once()
+	repo.On("ProcessOne", mock.Anything, int64(1), mock.Anything, mock.Anything).Return(rt.ErrAlreadyProcessed).Once()
 
-	err := u.ProcessDueTransactions()
-	assert.NoError(t, err) // ProcessDue swallows per-item errors and continues
-	repo.AssertNotCalled(t, "UpdateLastProcessed", mock.Anything, mock.Anything)
+	got, err := u.ProcessDueForUser(context.Background(), 2)
+	assert.NoError(t, err)
+	assert.Empty(t, got.Processed)
+	assert.Equal(t, 0, got.Failed) // lost a race, not a failure
 	repo.AssertExpectations(t)
-	txRepo.AssertExpectations(t)
+}
+
+func TestRecurring_ProcessDue_CountsFailuresAndContinues(t *testing.T) {
+	repo := new(MockRecurringRepository)
+	u := uc.New(repo)
+
+	due := []rt.RecurringTransaction{{ID: 1, UserID: 2, Note: "a"}, {ID: 2, UserID: 2, Note: "b"}}
+	repo.On("FindDueByUserID", int64(2), mock.Anything).Return(due, nil).Once()
+	repo.On("ProcessOne", mock.Anything, int64(1), mock.Anything, mock.Anything).Return(errors.New("db")).Once()
+	repo.On("ProcessOne", mock.Anything, int64(2), mock.Anything, mock.Anything).Return(nil).Once()
+
+	got, err := u.ProcessDueForUser(context.Background(), 2)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, got.Failed)
+	assert.Len(t, got.Processed, 1)
+	assert.Equal(t, int64(2), got.Processed[0].RecurringID)
+	repo.AssertExpectations(t)
 }
 
 func TestRecurring_ProcessDue_FindError(t *testing.T) {
 	repo := new(MockRecurringRepository)
-	txRepo := new(MockTxRepository)
-	u := uc.New(repo, txRepo)
+	u := uc.New(repo)
 
-	repo.On("FindDue", mock.Anything).Return([]rt.RecurringTransaction{}, errors.New("db")).Once()
+	repo.On("FindDueByUserID", int64(2), mock.Anything).Return([]rt.RecurringTransaction{}, errors.New("db")).Once()
 
-	err := u.ProcessDueTransactions()
+	_, err := u.ProcessDueForUser(context.Background(), 2)
 	assert.Error(t, err)
 	repo.AssertExpectations(t)
 }
 
 func TestRecurring_GetAndDelete(t *testing.T) {
 	repo := new(MockRecurringRepository)
-	txRepo := new(MockTxRepository)
-	u := uc.New(repo, txRepo)
+	u := uc.New(repo)
 
 	repo.On("FindAllByUserID", int64(4)).Return([]rt.RecurringTransaction{{ID: 1}}, nil).Once()
 	repo.On("Delete", int64(9)).Return(nil).Once()

@@ -420,3 +420,49 @@ func TestBotHandler_GetBudgetStatus_InvalidMonth(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	m.AssertNotCalled(t, "GetBudgetStatus", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 }
+
+func (m *MockBotUsecase) ProcessDueRecurring(ctx context.Context, chatID int64) (uc.ProcessDueResult, error) {
+	args := m.Called(ctx, chatID)
+	return args.Get(0).(uc.ProcessDueResult), args.Error(1)
+}
+
+func TestBotHandler_ProcessDueRecurring_Success(t *testing.T) {
+	m := new(MockBotUsecase)
+	h := handler.NewBotHandler(m, new(MockAuditRepo))
+	m.On("ProcessDueRecurring", mock.Anything, int64(555)).Return(uc.ProcessDueResult{
+		Processed: []uc.ProcessedRecurring{{CategoryName: "Listrik"}},
+	}, nil).Once()
+
+	r := newRouter()
+	r.POST("/internal/bot/recurring/process", h.ProcessDueRecurring)
+
+	w := doJSON(r, http.MethodPost, "/internal/bot/recurring/process", `{"chat_id":555}`)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), `"category_name":"Listrik"`)
+	m.AssertExpectations(t)
+}
+
+func TestBotHandler_ProcessDueRecurring_NotLinked(t *testing.T) {
+	m := new(MockBotUsecase)
+	h := handler.NewBotHandler(m, new(MockAuditRepo))
+	m.On("ProcessDueRecurring", mock.Anything, int64(999)).
+		Return(uc.ProcessDueResult{}, telegram.ErrLinkNotFound).Once()
+
+	r := newRouter()
+	r.POST("/internal/bot/recurring/process", h.ProcessDueRecurring)
+
+	w := doJSON(r, http.MethodPost, "/internal/bot/recurring/process", `{"chat_id":999}`)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestBotHandler_ProcessDueRecurring_MissingChatID(t *testing.T) {
+	m := new(MockBotUsecase)
+	h := handler.NewBotHandler(m, new(MockAuditRepo))
+
+	r := newRouter()
+	r.POST("/internal/bot/recurring/process", h.ProcessDueRecurring)
+
+	w := doJSON(r, http.MethodPost, "/internal/bot/recurring/process", `{}`)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	m.AssertNotCalled(t, "ProcessDueRecurring", mock.Anything, mock.Anything)
+}

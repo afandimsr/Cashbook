@@ -19,6 +19,7 @@ Perintah:
 /report - laporan pemasukan & pengeluaran bulan ini
 /budget - pemakaian anggaran bulan ini
 /kategori - lihat daftar kategori kamu
+/process - proses transaksi berulang yang jatuh tempo
 /link <kode> - hubungkan akun CashBook
 /start - cek akun yang terhubung
 /help - tampilkan bantuan ini`
