@@ -69,11 +69,11 @@ func Run() {
 	transactionUsecase := transactionUC.New(transactionRepository)
 	budgetUsecase := budgetUC.New(budgetRepository)
 	reportUsecase := reportUC.New(transactionRepository)
-	recurringUsecase := recurringUC.New(recurringRepository, transactionRepository)
+	recurringUsecase := recurringUC.New(recurringRepository)
 	twofaUsecase := userUC.NewTwoFAUsecase(userRepository, mfaBackupCodeRepository)
 	mfaSettingsUsecase := userUC.NewMFASettingsUsecase(mfaSettingsRepository)
 	sharedExpenseUsecase := sharedExpenseUC.New(sharedExpenseRepository)
-	botUsecase := botUC.New(telegramRepository, categoryUsecase, transactionUsecase, reportUsecase, userUsecase, budgetUsecase)
+	botUsecase := botUC.New(telegramRepository, categoryUsecase, transactionUsecase, reportUsecase, userUsecase, budgetUsecase, recurringUsecase)
 
 	// Rate limiters. In-memory, per-process — fine for this app's current
 	// single-instance deployment; a horizontally-scaled deployment would need

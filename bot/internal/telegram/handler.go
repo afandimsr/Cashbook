@@ -107,6 +107,8 @@ func (b *Bot) dispatch(ctx context.Context, chatID int64, msg *tgbotapi.Message)
 			return b.svc.Budgets(ctx, chatID, int(now.Month()), now.Year())
 		case "kategori", "categories":
 			return b.svc.Categories(ctx, chatID)
+		case "process", "jatuhtempo":
+			return b.svc.ProcessDue(ctx, chatID)
 		case "report":
 			now := time.Now()
 			return b.svc.MonthlyReport(ctx, chatID, int(now.Month()), now.Year())

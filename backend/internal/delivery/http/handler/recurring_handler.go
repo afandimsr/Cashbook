@@ -99,7 +99,7 @@ func (h *RecurringHandler) DeleteRecurring(c *gin.Context) {
 
 // ProcessDue godoc
 // @Summary      Execute pending automations
-// @Description  Manually trigger the processing of due recurring templates to generate actual financial transactions for the current period.
+// @Description  Generate transactions for the caller's due recurring templates for the current period. Returns the generated items and how many failed (failed ones stay due).
 // @Tags         Recurring
 // @Produce      json
 // @Success      200 {object} response.SuccessResponse
@@ -107,10 +107,13 @@ func (h *RecurringHandler) DeleteRecurring(c *gin.Context) {
 // @Failure      500 {object} response.ErrorSwaggerResponse
 // @Router       /recurring/process [post]
 func (h *RecurringHandler) ProcessDue(c *gin.Context) {
-	if err := h.usecase.ProcessDueTransactions(); err != nil {
-		response.Error(c, 400, "BAD_REQUEST", "failed to process due recurring transactions", err.Error())
+	userID := c.MustGet("user_id").(int64)
+
+	result, err := h.usecase.ProcessDueForUser(c.Request.Context(), userID)
+	if err != nil {
+		c.Error(err)
 		return
 	}
 
-	response.Success(c, http.StatusOK, "processed", nil)
+	response.Success(c, http.StatusOK, "processed", result)
 }

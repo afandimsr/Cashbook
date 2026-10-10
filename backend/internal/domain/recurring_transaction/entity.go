@@ -1,6 +1,12 @@
 package recurring_transaction
 
-import "time"
+import (
+	"context"
+	"errors"
+	"time"
+
+	"github.com/afandimsr/cashbook-backend/internal/domain/transaction"
+)
 
 type Frequency string
 
@@ -9,6 +15,10 @@ const (
 	Weekly  Frequency = "weekly"
 	Monthly Frequency = "monthly"
 )
+
+// ErrAlreadyProcessed is returned by ProcessOne when the template is no longer
+// due at commit time, e.g. a concurrent request processed it first.
+var ErrAlreadyProcessed = errors.New("recurring transaction already processed")
 
 type RecurringTransaction struct {
 	ID            int64     `json:"id"`
@@ -24,9 +34,11 @@ type RecurringTransaction struct {
 
 type Repository interface {
 	FindAllByUserID(userID int64) ([]RecurringTransaction, error)
-	FindDue(now time.Time) ([]RecurringTransaction, error)
+	FindDueByUserID(userID int64, now time.Time) ([]RecurringTransaction, error)
 	Save(rt *RecurringTransaction) error
 	Update(rt *RecurringTransaction) error
 	Delete(id int64) error
-	UpdateLastProcessed(id int64, lastProcessed time.Time) error
+	// ProcessOne atomically marks template id as processed at now and saves tx.
+	// It returns ErrAlreadyProcessed when the template is not due anymore.
+	ProcessOne(ctx context.Context, id int64, tx *transaction.Transaction, now time.Time) error
 }

@@ -1,10 +1,12 @@
 package postgresql
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
 	"github.com/afandimsr/cashbook-backend/internal/domain/recurring_transaction"
+	"github.com/afandimsr/cashbook-backend/internal/domain/transaction"
 )
 
 type recurringRepo struct {
@@ -28,18 +30,21 @@ func (r *recurringRepo) FindAllByUserID(userID int64) ([]recurring_transaction.R
 	return r.scanRows(rows)
 }
 
-func (r *recurringRepo) FindDue(now time.Time) ([]recurring_transaction.RecurringTransaction, error) {
-	// Simple logic: if last_processed is nil, it's due if now >= start_date.
-	// If not nil, it depends on frequency.
-	// This query identifies records needing processed today/due.
-	rows, err := r.db.Query(`
-		SELECT id, user_id, category_id, amount, type, note, frequency, start_date, last_processed 
-		FROM recurring_transactions 
-		WHERE (last_processed IS NULL AND start_date <= $1)
+// dueCondition matches templates due at $1: never processed and already
+// started, or last processed at least one period ago. Shared by the due
+// lookup and the claim in ProcessOne so both agree on what "due" means.
+const dueCondition = `(
+		(last_processed IS NULL AND start_date <= $1)
 		OR (frequency = 'daily' AND last_processed <= $1 - INTERVAL '1 day')
 		OR (frequency = 'weekly' AND last_processed <= $1 - INTERVAL '1 week')
 		OR (frequency = 'monthly' AND last_processed <= $1 - INTERVAL '1 month')
-	`, now)
+	)`
+
+func (r *recurringRepo) FindDueByUserID(userID int64, now time.Time) ([]recurring_transaction.RecurringTransaction, error) {
+	rows, err := r.db.Query(`
+		SELECT id, user_id, category_id, amount, type, note, frequency, start_date, last_processed
+		FROM recurring_transactions
+		WHERE user_id = $2 AND `+dueCondition, now, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +74,36 @@ func (r *recurringRepo) Delete(id int64) error {
 	return err
 }
 
-func (r *recurringRepo) UpdateLastProcessed(id int64, lastProcessed time.Time) error {
-	_, err := r.db.Exec("UPDATE recurring_transactions SET last_processed = $1 WHERE id = $2", lastProcessed, id)
-	return err
+// ProcessOne claims the template by advancing last_processed only while it is
+// still due, then inserts the generated transaction in the same DB
+// transaction. Two concurrent calls can't both claim it, so a double tap
+// never creates a duplicate transaction.
+func (r *recurringRepo) ProcessOne(ctx context.Context, id int64, t *transaction.Transaction, now time.Time) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback() // no-op after a successful Commit
+
+	res, err := tx.ExecContext(ctx,
+		"UPDATE recurring_transactions SET last_processed = $1 WHERE id = $2 AND "+dueCondition,
+		now, id,
+	)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return recurring_transaction.ErrAlreadyProcessed
+	}
+
+	if err := NewTransactionRepoWithTx(tx).Save(t); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (r *recurringRepo) scanRows(rows *sql.Rows) ([]recurring_transaction.RecurringTransaction, error) {

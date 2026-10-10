@@ -33,6 +33,7 @@ type BackendClient interface {
 	GetMonthlyReport(ctx context.Context, chatID int64, month, year int) (*backend.MonthlyReport, error)
 	GetBudgetStatus(ctx context.Context, chatID int64, month, year int) ([]backend.BudgetStatus, error)
 	ListLinks(ctx context.Context) ([]backend.TelegramLink, error)
+	ProcessDueRecurring(ctx context.Context, chatID int64) (*backend.ProcessDueResult, error)
 }
 
 // LLMClient is satisfied by *llm.Client; declared here so tests can substitute
@@ -294,6 +295,78 @@ func budgetMarker(s backend.BudgetStatus) string {
 		return "🟡"
 	default:
 		return "🟢"
+	}
+}
+
+// ProcessDue generates transactions for the linked user's due recurring
+// templates (same as "process due" in the web app) and lists what was created.
+func (b *Bot) ProcessDue(ctx context.Context, chatID int64) (string, error) {
+	result, err := b.backend.ProcessDueRecurring(ctx, chatID)
+	if err != nil {
+		var apiErr *backend.APIError
+		if errors.As(err, &apiErr) && apiErr.StatusCode == 404 {
+			return notLinkedMessage, nil
+		}
+		return "", err
+	}
+
+	failedNote := ""
+	if result.Failed > 0 {
+		failedNote = fmt.Sprintf("\n\n⚠️ %d transaksi berulang gagal diproses, coba lagi nanti.", result.Failed)
+	}
+	if len(result.Processed) == 0 {
+		if result.Failed > 0 {
+			return "Tidak ada transaksi berulang yang berhasil diproses." + failedNote, nil
+		}
+		return "Tidak ada transaksi berulang yang jatuh tempo saat ini.", nil
+	}
+
+	var totalIncome, totalExpense float64
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "Transaksi berulang diproses (%d):\n\n", len(result.Processed))
+	for _, p := range result.Processed {
+		verb := "Pemasukan"
+		if p.Type == "expense" {
+			verb = "Pengeluaran"
+			totalExpense += p.Amount
+		} else {
+			totalIncome += p.Amount
+		}
+		fmt.Fprintf(&sb, "- %s %s – %s (%s)", verb, formatRupiah(p.Amount), categoryLabel(p.CategoryName), frequencyLabel(p.Frequency))
+		if p.Note != "" {
+			fmt.Fprintf(&sb, ": %s", p.Note)
+		}
+		sb.WriteString("\n")
+	}
+	if totalIncome > 0 {
+		fmt.Fprintf(&sb, "\nTotal pemasukan: %s", formatRupiah(totalIncome))
+	}
+	if totalExpense > 0 {
+		fmt.Fprintf(&sb, "\nTotal pengeluaran: %s", formatRupiah(totalExpense))
+	}
+	sb.WriteString(failedNote)
+	return sb.String(), nil
+}
+
+// categoryLabel covers the backend leaving the name blank when its category
+// lookup failed after the transactions were already saved.
+func categoryLabel(name string) string {
+	if name == "" {
+		return "tanpa kategori"
+	}
+	return name
+}
+
+func frequencyLabel(f string) string {
+	switch f {
+	case "daily":
+		return "harian"
+	case "weekly":
+		return "mingguan"
+	case "monthly":
+		return "bulanan"
+	default:
+		return f
 	}
 }
 

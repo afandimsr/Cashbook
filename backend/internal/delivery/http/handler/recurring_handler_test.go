@@ -1,12 +1,14 @@
 package handler_test
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"testing"
 
 	"github.com/afandimsr/cashbook-backend/internal/delivery/http/handler"
 	rt "github.com/afandimsr/cashbook-backend/internal/domain/recurring_transaction"
+	recurringUC "github.com/afandimsr/cashbook-backend/internal/usecase/recurring_transaction"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -21,8 +23,11 @@ func (m *MockRecurringUsecase) CreateRecurring(userID int64, r rt.RecurringTrans
 	args := m.Called(userID, r)
 	return args.Get(0).(rt.RecurringTransaction), args.Error(1)
 }
-func (m *MockRecurringUsecase) DeleteRecurring(id int64) error   { return m.Called(id).Error(0) }
-func (m *MockRecurringUsecase) ProcessDueTransactions() error    { return m.Called().Error(0) }
+func (m *MockRecurringUsecase) DeleteRecurring(id int64) error { return m.Called(id).Error(0) }
+func (m *MockRecurringUsecase) ProcessDueForUser(ctx context.Context, userID int64) (recurringUC.ProcessResult, error) {
+	args := m.Called(ctx, userID)
+	return args.Get(0).(recurringUC.ProcessResult), args.Error(1)
+}
 
 func TestRecurringHandler_GetRecurring(t *testing.T) {
 	uc := new(MockRecurringUsecase)
@@ -79,24 +84,28 @@ func TestRecurringHandler_Delete_InvalidID(t *testing.T) {
 func TestRecurringHandler_ProcessDue(t *testing.T) {
 	uc := new(MockRecurringUsecase)
 	h := handler.NewRecurringHandler(uc)
-	uc.On("ProcessDueTransactions").Return(nil).Once()
+	// newRouter injects user_id 1: processing must be scoped to the caller.
+	uc.On("ProcessDueForUser", mock.Anything, int64(1)).Return(recurringUC.ProcessResult{
+		Processed: []recurringUC.ProcessedItem{{RecurringID: 3, TransactionID: 7, Amount: 50}},
+	}, nil).Once()
 
 	r := newRouter()
 	r.POST("/recurring/process", h.ProcessDue)
 
 	w := doJSON(r, http.MethodPost, "/recurring/process", "")
 	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), `"recurring_id":3`)
 	uc.AssertExpectations(t)
 }
 
 func TestRecurringHandler_ProcessDue_Error(t *testing.T) {
 	uc := new(MockRecurringUsecase)
 	h := handler.NewRecurringHandler(uc)
-	uc.On("ProcessDueTransactions").Return(errors.New("db")).Once()
+	uc.On("ProcessDueForUser", mock.Anything, int64(1)).Return(recurringUC.ProcessResult{}, errors.New("db down")).Once()
 
 	r := newRouter()
 	r.POST("/recurring/process", h.ProcessDue)
 
 	w := doJSON(r, http.MethodPost, "/recurring/process", "")
-	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }

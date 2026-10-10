@@ -54,6 +54,13 @@ func (m *mockBackend) ListLinks(ctx context.Context) ([]backend.TelegramLink, er
 	args := m.Called(ctx)
 	return args.Get(0).([]backend.TelegramLink), args.Error(1)
 }
+func (m *mockBackend) ProcessDueRecurring(ctx context.Context, chatID int64) (*backend.ProcessDueResult, error) {
+	args := m.Called(ctx, chatID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*backend.ProcessDueResult), args.Error(1)
+}
 
 type mockLLM struct{ mock.Mock }
 
@@ -226,4 +233,27 @@ func TestDispatch_BudgetCommand_UsesCurrentMonth(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, reply, "Makanan")
 	be.AssertExpectations(t)
+}
+
+func TestDispatch_ProcessCommand_AndAlias(t *testing.T) {
+	for _, cmd := range []string{"/process", "/jatuhtempo"} {
+		be := new(mockBackend)
+		svc := service.New(be, new(mockLLM))
+		b := &Bot{svc: svc, linkLimiter: ratelimit.New(linkAttemptsMax, linkAttemptsWindow)}
+
+		be.On("ProcessDueRecurring", mock.Anything, int64(555)).
+			Return(&backend.ProcessDueResult{Processed: []backend.ProcessedRecurring{}}, nil).Once()
+
+		msg := &tgbotapi.Message{
+			Chat:     &tgbotapi.Chat{ID: 555},
+			From:     &tgbotapi.User{FirstName: "Afandi"},
+			Text:     cmd,
+			Entities: []tgbotapi.MessageEntity{{Type: "bot_command", Offset: 0, Length: len(cmd)}},
+		}
+
+		reply, err := b.dispatch(context.Background(), 555, msg)
+		assert.NoError(t, err, cmd)
+		assert.Contains(t, reply, "jatuh tempo", cmd)
+		be.AssertExpectations(t)
+	}
 }

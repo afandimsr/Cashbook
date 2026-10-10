@@ -113,3 +113,19 @@ func TestClient_GetBudgetStatus_Success(t *testing.T) {
 	assert.True(t, got[0].IsOver)
 	assert.Equal(t, -60000.0, got[0].Remaining)
 }
+
+func TestClient_ProcessDueRecurring_Success(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "/api/v1/internal/bot/recurring/process", r.URL.Path)
+		assert.Equal(t, "test-key", r.Header.Get("X-Internal-Api-Key"))
+		w.Write([]byte(`{"success":true,"message":"processed","data":{"processed":[{"category_name":"Listrik","amount":50000,"type":"expense","note":"PLN","frequency":"monthly"}],"failed":1}}`))
+	}))
+	defer srv.Close()
+
+	c := backend.New(srv.URL, "test-key", 5*time.Second)
+	got, err := c.ProcessDueRecurring(context.Background(), 555)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, got.Failed)
+	assert.Equal(t, []backend.ProcessedRecurring{{CategoryName: "Listrik", Amount: 50000, Type: "expense", Note: "PLN", Frequency: "monthly"}}, got.Processed)
+}
